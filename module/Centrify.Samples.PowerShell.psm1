@@ -71,11 +71,11 @@ function Centrify-InvokeREST {
         Write-Verbose "Creating new session variable"
         if($certificate -eq $null)
         {
-            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body $jsonContent -SessionVariable websession -Headers $addHeaders
+            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body ([System.Text.Encoding]::UTF8.GetBytes($jsonContent)) -SessionVariable websession -Headers $addHeaders
         }
         else 
         {
-            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body $jsonContent -SessionVariable websession -Headers $addHeaders -Certificate $certificate
+            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body ([System.Text.Encoding]::UTF8.GetBytes($jsonContent)) -SessionVariable websession -Headers $addHeaders -Certificate $certificate
         }
     }
     else
@@ -83,11 +83,11 @@ function Centrify-InvokeREST {
         Write-Verbose "Using existing session variable $websession"
         if($certificate -eq $null)
         {
-            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body $jsonContent -WebSession $websession
+            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body ([System.Text.Encoding]::UTF8.GetBytes($jsonContent)) -WebSession $websession
         }
         else
         {            
-            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body $jsonContent -WebSession $websession -Certificate $certificate
+            $response = Invoke-RestMethod -Uri $methodEndpoint -ContentType "application/json" -Method Post -Body ([System.Text.Encoding]::UTF8.GetBytes($jsonContent)) -WebSession $websession -Certificate $certificate
         }
         
     }
