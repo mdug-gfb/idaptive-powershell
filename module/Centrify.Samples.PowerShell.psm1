@@ -384,6 +384,94 @@ function Centrify-Internal-MechToPrompt {
 
 <# 
  .Synopsis
+  Performs Authorization to an OAuth server in Application Services using Auth Code Flow.
+
+ .Description
+  Performs Authorization to an OAuth server in Application Services using Auth Code Flow. Returns 
+  Access Bearer Token.
+
+ .Parameter Endpoint
+  The endpoint to authenticate against, required - must be tenant's url/pod
+
+ .Example
+   # Get an OAuth2 token for API calls to abc123.centrify.com
+   Centrify-OAuthCodeFlow -Endpoint "https://abc123.centrify.com" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+#>
+function Centrify-OAuthCodeFlow()
+{
+
+    [CmdletBinding()]
+        param(
+        [string] $endpoint = "https://cloud.centrify.com",
+        [Parameter(Mandatory=$true)]
+        [string] $appid, 
+        [Parameter(Mandatory=$true)]
+        [string] $clientid,
+        [Parameter(Mandatory=$true)]
+        [string] $clientsecret,
+        [Parameter(Mandatory=$true)]
+        [string] $scope
+    )
+
+    $verbosePreference = "Continue"
+
+	$config = @{}
+	$config.authUri = "$endpoint/oauth2/authorize/$appid"
+	$config.tokUri = "$endpoint/oauth2/token/$appid"
+	$config.redirect = "$endpoint/sysinfo/dummy"	
+	$config.clientID = $clientid
+	$config.clientSecret =  $clientsecret
+	$config.scope = $scope
+
+	return centrify-InternalOAuthCodeFlow $config
+
+}
+
+<# 
+ .Synopsis
+  Performs Authorization to an OAuth server in Application Services using Client Credentials Flow.
+
+ .Description
+  Performs Authorization to an OAuth server in Application Services using Client Credentials Flow. Returns 
+  Access Bearer Token.
+
+ .Parameter Endpoint
+  The endpoint to authenticate against, required - must be tenant's url/pod
+
+ .Example
+   # Get an OAuth2 token for API calls to abc123.centrify.com
+   Centrify-OAuthImplicit -Endpoint "https://abc123.centrify.com" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+#>
+function Centrify-OAuthImplicit()
+{
+
+   [CmdletBinding()]
+   param(
+        [string] $endpoint = "https://cloud.centrify.com",
+        [Parameter(Mandatory=$true)]
+        [string] $appid, 
+        [Parameter(Mandatory=$true)]
+        [string] $clientid,
+        [Parameter(Mandatory=$true)]
+        [string] $clientsecret,
+        [Parameter(Mandatory=$true)]
+        [string] $scope
+    )
+
+	$verbosePreference = "Continue"
+	$config = @{}
+	$config.authUri = "$hostURL/oauth2/authorize/$appid"
+	$config.tokUri = "$hostURL/oauth2/token/$appid"
+	$config.redirect = "$hostURL/sysinfo/dummy"
+	$config.clientID = $clientid
+	$config.clientSecret =  $clientsecret
+	$config.scope = $scope
+
+	return centrify-InternalImplicitFlow $config
+} 
+
+<# 
+ .Synopsis
   Performs Authorization to an OAuth server in Application Services using Client Credentials Flow.
 
  .Description
@@ -410,7 +498,7 @@ function Centrify-OAuth-ClientCredentials
         [string] $clientsecret,
         [Parameter(Mandatory=$true)]
         [string] $scope
-        )
+    )
 
     $verbosePreference = "Continue"
     $api = "$endpoint/oauth2/token/$appid"
@@ -427,6 +515,21 @@ function Centrify-OAuth-ClientCredentials
     Write-Output $finalResult  
 }
 
+<# 
+ .Synopsis
+  Performs Authorization to an OAuth server in Application Services using Resource Owner Flow.
+
+ .Description
+  Performs Authorization to an OAuth server in Application Services using Resource Owner Flow. Returns 
+  Access Bearer Token.
+
+ .Parameter Endpoint
+  The endpoint to authenticate against, required - must be tenant's url/pod
+
+ .Example
+   # Get an OAuth2 token for API calls to abc123.centrify.com
+   Centrify-OAuthResourceOwner -Endpoint "https://abc123.centrify.com" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+#>
 function Centrify-OAuthResourceOwner
 {
     [CmdletBinding()]
@@ -442,7 +545,7 @@ function Centrify-OAuthResourceOwner
         [string] $password,
         [Parameter(Mandatory=$true)]
         [string] $scope
-        )
+    )
 
     $verbosePreference = "Continue"
     $api = "$endpoint/oauth2/token/$appid"
@@ -471,6 +574,200 @@ function Centrify-OAuthResourceOwner
     Write-Output $finalResult  
 }
 
+#Internal function for Auth Code Flow. Returns OAuth2 Access JWT Token
+function Centrify-InternalOAuthCodeFlow($ocfg)
+
+{
+
+	Add-Type -AssemblyName System.Windows.Forms
+	Add-Type -AssemblyName System.Web
+
+
+
+	# build web UI
+	$form = New-Object Windows.Forms.Form
+	$form.Width = 640
+	$form.Height = 480
+	$web = New-Object Windows.Forms.WebBrowser
+	$web.Size = $form.ClientSize
+	$web.Anchor = "Left,Top,Right,Bottom"
+	$form.Controls.Add($web)
+
+	$Global:redirect_uri = $null
+
+	# a handler for page change events in the browser
+	$web.add_Navigated(
+	{
+		Write-Verbose "Navigated $($_.Url)"
+
+		# detect when browser is about to fetch redirect_uri
+		$uri = [uri] $ocfg.redirect
+
+		if($_.Url.LocalPath -eq $uri.LocalPath) 
+        {
+			# collect authorization response in a global
+			$Global:redirect_uri = $_.Url
+			$form.DialogResult = "OK"
+			$form.Close()
+		}
+
+	})
+
+	write-verbose "host is $($ocfg.authUri)"
+	write-verbose "client id is $($ocfg.clientID)"
+
+	# navigate to authorize endpoint
+	$web.Navigate("$($ocfg.authUri)?debug=true&scope=$($ocfg.scope)&response_type=code&redirect_uri=$($ocfg.redirect)&client_id=$($ocfg.clientID)&client_secret=$($ocfg.clientSecret)")
+
+	# show browser window, waits for window to close
+	if($form.ShowDialog() -ne "OK") 
+    {
+        Write-Verbose "WebBrowser: Canceled"
+		return @{}
+	}
+
+	if(-not $Global:redirect_uri) 
+    {
+        Write-Verbose "WebBrowser: redirect_uri is null"
+		return @{}
+	}
+
+	# decode query string of authorization code response
+	$response = [Web.HttpUtility]::ParseQueryString($Global:redirect_uri.Query)
+
+	if(-not $response.Get("code")) 
+    {
+		Write-Verbose "WebBrowser: authorization code is null"
+		return @{}
+	}
+
+	$tokenrequest = @{ "grant_type" = "authorization_code"; "redirect_uri" = $ocfg.redirect; "code" = $response.Get("code") }
+
+    Write-Verbose $tokenrequest.code
+
+
+	if($ocfg.clientSecret)
+
+	{
+		# http basic authorization header for token request
+		$b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($ocfg.clientID):$($ocfg.clientSecret)"))
+		$basic = @{ "Authorization" = "Basic $b64"}
+	}
+	else
+	{
+		$basic =@{}
+		$tokenRequest.client_id = $ocfg.clientID
+	}
+
+	# send token request
+	Write-Verbose "token-request: $([pscustomobject]$tokenrequest)"
+    Write-Verbose $ocfg.tokUri
+
+	try
+	{
+		$token = Invoke-RestMethod -Method Post -Uri $ocfg.tokUri -Headers $basic -Body $tokenrequest
+	}
+	catch [System.Net.WebException]
+	{
+		$e = $_.Exception
+		Write-host "Exception caught: $e"
+	}
+
+	Write-Verbose "token-response: $($token)"
+
+	return $token
+}
+
+#Internal function for Implicit Flow. Returns OAuth2 Access JWT Token
+function Centrify-InternalImplicitFlow($ocfg)
+{
+
+	Add-Type -AssemblyName System.Windows.Forms
+	Add-Type -AssemblyName System.Web
+
+	# build web UI
+
+	$form = New-Object Windows.Forms.Form
+	$form.Width = 640
+	$form.Height = 480
+	$web = New-Object Windows.Forms.WebBrowser
+	$web.Size = $form.ClientSize
+	$web.Anchor = "Left,Top,Right,Bottom"
+	$form.Controls.Add($web)   
+
+	$Global:redirect_uri = $null
+
+	# a handler for page change events in the browser
+	$web.add_Navigated(
+	{
+		Write-Verbose "Navigated $($_.Url)"
+
+		# detect when browser is about to fetch redirect_uri
+		$uri = [uri] $ocfg.redirect
+
+		if($_.Url.LocalPath -eq $uri.LocalPath) 
+        {
+
+			# collect authorization response in a global
+			$Global:redirect_uri = $_.Url
+			$form.DialogResult = "OK"
+			$form.Close()
+		}
+
+	})
+
+	write-verbose "host is $($ocfg.authUri)"
+	write-verbose "client id is $($ocfg.clientID)"
+
+	# navigate to authorize endpoint
+	$web.Navigate("$($ocfg.authUri)?debug=true&scope=$($ocfg.scope)&response_type=code&redirect_uri=$($ocfg.redirect)&client_id=$($ocfg.clientID)&client_secret=$($ocfg.clientSecret)")
+
+	# show browser window, waits for window to close
+	if($form.ShowDialog() -ne "OK") 
+    {
+		Write-Verbose "WebBrowser: Canceled"
+		return @{}
+	}
+
+	if(-not $Global:redirect_uri) 
+    {
+		Write-Verbose "WebBrowser: redirect_uri is null"
+		return @{}
+	}
+
+	# decode query string of authorization code response
+	$response = [Web.HttpUtility]::ParseQueryString($Global:redirect_uri.Query)
+
+	if(-not $response.Get("code")) 
+    {
+		Write-Verbose "WebBrowser: authorization code is null"
+		return @{}
+	}
+
+	$tokenrequest = @{ "grant_type" = "implicit"; "redirect_uri" = $ocfg.redirect; "code" = $response.Get("code") }
+
+	if($ocfg.clientSecret)
+	{
+
+		# http basic authorization header for token request
+		$b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($ocfg.clientID):$($ocfg.clientSecret)"))
+		$basic = @{ "Authorization" = "Basic $b64"}
+	}
+
+	else
+	{
+
+		$basic =@{}
+		$tokenRequest.client_id = $ocfg.clientID
+	}
+
+	# send token request
+	Write-Verbose "token-request: $([pscustomobject]$tokenrequest)"
+	$token = Invoke-RestMethod -Method Post -Uri $ocfg.tokUri -Headers $basic -Body $tokenrequest
+	Write-Verbose "token-response: $($token)"
+	return $token
+
+}
 
 #Internal function. Returns base64 encoded auth token for basic Authorizatioin header.
 function Centrify-InternalMakeClientAuth($id,$secret)
@@ -484,5 +781,7 @@ function Centrify-InternalMakeClientAuth($id,$secret)
 Export-ModuleMember -function Centrify-InvokeREST
 Export-ModuleMember -function Centrify-InteractiveLogin-GetToken
 Export-ModuleMember -function Centrify-CertSsoLogin-GetToken
+Export-ModuleMember -function Centrify-OAuthCodeFlow
+Export-ModuleMember -function Centrify-OAuthImplicit
 Export-ModuleMember -function Centrify-OAuth-ClientCredentials
 Export-ModuleMember -function Centrify-OAuthResourceOwner

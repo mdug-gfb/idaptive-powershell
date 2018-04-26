@@ -53,10 +53,16 @@ try
     #  If you already have a bearer token and endpoint, no need to do this, just start using Centrify-InvokeREST
     #$token = Centrify-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
 
-    #Authorization using OAuth2 Cleint Credentials Flow. If interactive or MFA is desired, use Centrify-InteractiveLogin-GetToken instead.
+    #Authorization using OAuth2 Auth Code Flow.
+    #$token = Centrify-OAuthCodeFlow -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+
+    #Authorization using OAuth2 Implicit Flow. 
+    #$token = Centrify-OAuthImplicit -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+
+    #Authorization using OAuth2 Cleint Credentials Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.centrify.com/reference#post_security-ondemandchallenge
     $token = Centrify-OAuth-ClientCredentials -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
-    #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use Centrify-InteractiveLogin-GetToken instead.
+    #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.centrify.com/reference#post_security-ondemandchallenge
     #$token = Centrify-OAuthResourceOwner -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Username "user@domain" -Password "password" -Scope "scope" -Verbose:$enableVerbose
 
     # Issue a certificate for the logged in user. This only needs to be called once.
