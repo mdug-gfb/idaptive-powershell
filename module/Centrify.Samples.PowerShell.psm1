@@ -423,7 +423,11 @@ function Centrify-OAuthCodeFlow()
 	$config.clientSecret =  $clientsecret
 	$config.scope = $scope
 
-	return centrify-InternalOAuthCodeFlow $config
+	$restResult = centrify-InternalOAuthCodeFlow $config
+
+    $finalResult = @{}
+    $finalResult.Endpoint = $endpoint    
+    $finalResult.BearerToken = $restResult.access_token
 
 }
 
@@ -467,7 +471,11 @@ function Centrify-OAuthImplicit()
 	$config.clientSecret =  $clientsecret
 	$config.scope = $scope
 
-	return centrify-InternalImplicitFlow $config
+	$restResult = centrify-InternalImplicitFlow $config
+
+    $finalResult = @{}
+    $finalResult.Endpoint = $endpoint    
+    $finalResult.BearerToken = $restResult.access_token
 } 
 
 <# 
