@@ -429,6 +429,8 @@ function Centrify-OAuthCodeFlow()
     $finalResult.Endpoint = $endpoint    
     $finalResult.BearerToken = $restResult.access_token
 
+    Write-Output $finalResult  
+
 }
 
 <# 
@@ -476,6 +478,8 @@ function Centrify-OAuthImplicit()
     $finalResult = @{}
     $finalResult.Endpoint = $endpoint    
     $finalResult.BearerToken = $restResult.access_token
+
+    Write-Output $finalResult  
 } 
 
 <# 
