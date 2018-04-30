@@ -24,3 +24,4 @@ Sample Functionality Includes:
     8. Creating a new CUS user
     9. Locking/Unlocking a CUS user
    
+For support, please contact devsupport@centrify.com
