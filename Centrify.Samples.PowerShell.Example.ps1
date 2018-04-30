@@ -23,8 +23,9 @@ param(
 # Get the directory the example script lives in
 $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Import the Centrify.Samples.Powershell module 
+# Import the Centrify.Samples.Powershell  and Centrify.Samples.PowerShell.CPS modules 
 Import-Module $exampleRootDir\module\Centrify.Samples.Powershell.psm1 3>$null 4>$null
+Import-Module $exampleRootDir\module\Centrify.Samples.PowerShell.CPS.psm1   3> $null 4>$null
 
 # If Verbose is enabled, we'll pass it through
 $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
@@ -147,13 +148,17 @@ try
     #AddAccount -Endpoint $token.Endpoint -BearerToken $token.BearerToken -User "Username" -Password "Password" -Description "Some Description" -Host "ComputerID"    
 
     # Update a CPS Set/Collection
-    #UpdateMembersCollection -Endpoint $token.Endpoint -BearerToken $token.BearerToken -id "setGUID" -key "AccountOrServerKey" -table "Server or VaultAccount" 
+    #UpdateMembersCollection -Endpoint $token.Endpoint -BearerToken $token.BearerToken -id "setGUID" -key "AccountOrServerKey" -table "Server or VaultAccount"
+
+    # Import CPS entities (Systems, Domains, Databases, Accounts) listed in a CSV file
+    #Centrify-CPS-Import -Endpoint  $token.Endpoint -Token  $token.BearerToken -CSVFile "C:\Sample\Sample.CSV" -Verbose:$enableVerbose 
     
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
     #$logoutResult = Centrify-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose           
 }
 finally
 {
-    # Always remove the Centrify.Samples.Powershell module, makes development iteration on the module itself easier
+    # Always remove the Centrify.Samples.Powershell and Centrify.Samples.Powershell.CPS modules, makes development iteration on the module itself easier
     Remove-Module Centrify.Samples.Powershell 4>$null
+    Remove-Module Centrify.Samples.Powershell.CPS 4>$null
 }
