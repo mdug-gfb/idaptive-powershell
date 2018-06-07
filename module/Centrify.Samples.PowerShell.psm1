@@ -365,7 +365,7 @@ function Centrify-Internal-MechToPrompt {
             return "Enter the code sent via SMS to number ending in " + $mech.PartialDeviceAddress
         }
         "EMAIL" {                    
-            return "Please click or open the link sent to the email to address ending with " + $mech.PartialAddress
+            return "Click the link in the email " + $mech.PartialAddress + " or manually input the code"
         }
         "PF" {
             return "Calling number ending with " + $mech.PartialPhoneNumber + " please follow the spoken prompt"
