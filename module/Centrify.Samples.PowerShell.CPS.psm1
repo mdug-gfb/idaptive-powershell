@@ -52,8 +52,9 @@ function Centrify-CPS-Import {
         @{'Id' = 'Domain'; 'API' = '/ServerManage/AddDomains' ; 'ResultType' = 'AddResult';  'MaximumEntities'= $domainBatchCount }
         @{'Id' = 'System'; 'API' = '/ServerManage/AddResources'; 'ResultType' = 'AddResult'; 'MaximumEntities'= $systemeBatchCount }
         @{'Id' = 'Database'; 'API' = '/ServerManage/AddDatabases'; 'ResultType' = 'AddResult';  'MaximumEntities'= $databaseBatchCount }
-        @{'Id' = 'Account'; 'API' = '/ServerManage/AddAccounts'; 'ResultType' = 'AddResult';  'MaximumEntities'= $accountBatchCount }
-        @{'Id' = 'AdministrativeAccountUser'; 'API' = "/ServerManage/SetUpAdministrativeAccounts"; 'ResultType' = 'SetUpAdministrativeAccountsResult';  'MaximumEntities'= $setupAdminstratorUsersBatchCount }) 
+        @{'Id' = 'AdminAccount'; 'API' = '/ServerManage/AddAccounts'; 'ResultType' = 'AddResult';  'MaximumEntities'= $accountBatchCount }
+        @{'Id' = 'AdministrativeAccountUser'; 'API' = "/ServerManage/SetUpAdministrativeAccounts"; 'ResultType' = 'SetUpAdministrativeAccountsResult';  'MaximumEntities'= $setupAdminstratorUsersBatchCount }
+        @{'Id' = 'Account'; 'API' = '/ServerManage/AddAccounts'; 'ResultType' = 'AddResult';  'MaximumEntities'= $accountBatchCount }) 
     
     #check version
     $versionInfo = Centrify-InvokeREST  -Endpoint $endpoint -Method "/sysinfo/version" -Token $token -Verbose:$enableVerbose     
@@ -87,17 +88,17 @@ function Centrify-CPS-Import {
     foreach ($operation in $operations)
     {
         Write-Verbose ("Importing: {0}, API: {1}, maxmium batch count: {2}"  -f $operation.Id, $operation.API, $operation.MaximumEntities)
-        Centrify-InternalImportCSVRows $endpoint $token $rows  $operation
+        Centrify-InternalImportCSVRows $endpoint $token $rows $operation
     }
     
     # group the results based on the result type
     $failedrows = @($rows | Where-Object  {(($_.RowResult.AddResult -eq  $null) -or (($_.RowResult.AddResult -ne  $null) -And ($_.RowResult.AddResult.Output.Result -eq "Failed")))})
     $successrows = @($rows | Where-Object {($_.RowResult.AddResult -ne  $null) -And ($_.RowResult.AddResult.Output.Result -eq "Success") -And ($_.RowResult.SetUpAdministrativeAccountsResult.Output.Result -ne  "Failed")})
     $warningsrows = @($rows | where { ($successrows -notcontains $_ ) -And ($failedrows -notcontains $_ ) }) | Sort-Object { [int]$_.rowIndex }
-
-
-
  
+   
+ 
+
     # start processing results.
     # create a folder with date and time
     $date = get-date -format "yyyyMMdd_HHmmss"
@@ -142,6 +143,43 @@ function Centrify-CPS-Import {
 }
 
 
+function Centrify-FindAdminAccounts
+{
+    Param([Parameter(position=0)] [REF]$selectedadminrows)
+
+    #find all admin account set entities
+    $adminEntities = @($allrows | Where-Object {$_.Row.AdministrativeAccountUser -ne $null})
+    #find all admin accounts
+    $accountrows = @($allrows | Where-Object {($_.Row.EntityType -eq 'Account')} )
+    Write-Verbose("Number accounts: {0}" -f  $accountrows.Count)
+    $outItems = New-Object System.Collections.Generic.List[System.Object]
+    $parentEntityType, $parenttobematched     
+    foreach($adminEntity in $adminEntities) { 
+        $user, $domain = $adminEntity.Row.AdministrativeAccountUser.split("@")
+        if ($domain -ne $null) # administrative user is a domain account 
+        {
+            $parentEntityType = 'Domain'
+            $parenttobematched = $domain
+        }
+        else
+        {
+            $parentEntityType = 'System'
+            $parenttobematched = $adminEntity.Row.Name
+        }
+        foreach($account in $accountrows) {
+            if ($user -eq $account.Row.User -and $parenttobematched -eq $account.Row.ParentEntityNameOfAccount -and $parentEntityType -eq  $account.Row.ParentEntityTypeOfAccount )
+            {
+                $outItems.Add($account)
+                break;
+            }
+        }                    
+    }
+    Write-Verbose("# admin accounts : {0}" -f  $outItems.Count)
+    $selectedadminrows.Value = @($outItems | Sort-Object -Property @{Expression={$_.RowIndex}} -Unique)
+    Write-Verbose("# unique admin accounts : {0}" -f  $selectedadminrows.Value.Count)
+}
+
+
 #Internal function. Run specified operation on rows
 function Centrify-InternalImportCSVRows
 {
@@ -164,13 +202,28 @@ function Centrify-InternalImportCSVRows
     { 
         'System' { $selectedrows = @($allrows | Where-Object {$_.Row.EntityType -eq 'System'}) } 
         'Domain' { $selectedrows = @($allrows | Where-Object {$_.Row.EntityType -eq 'Domain'}) } 
-        'Database' { $selectedrows = @($allrows | Where-Object {$_.Row.EntityType -eq 'Database'}) } 
-        'Account' { $selectedrows = @($allrows | Where-Object {$_.Row.EntityType -eq 'Account'}) } 
+        'Database' { $selectedrows = @($allrows | Where-Object {$_.Row.EntityType -eq 'Database'}) }
+        'AdminAccount' { # Get all admin accounts
+                $selectedrows  = @()     
+                Centrify-FindAdminAccounts([REF]$selectedrows)
+                Write-Verbose("Total # Admin accounts to be created: {0}" -f  $selectedrows.Count)
+         }
+        'Account' {  # get all non admin accounts
+                $selectedrows = @($allrows | Where-Object {($_.Row.EntityType -eq 'Account')} ) 
+                Write-Verbose("Total # accounts to be created: {0}" -f  $selectedrows.Count)
+                $alreadyCreatedAccounts  = @()     
+                Centrify-FindAdminAccounts([REF]$alreadyCreatedAccounts)
+                Write-Verbose("# accounts already created: {0}" -f  $alreadyCreatedAccounts.Count) 
+                foreach($addedaccount in $alreadyCreatedAccounts) {
+                    $selectedrows = @($selectedrows | Where-Object { $addedaccount.RowIndex -notcontains $_.RowIndex })
+                }
+                Write-Verbose("# accounts to be created: {0}" -f  $selectedrows.Count)                           
+         }
         'AdministrativeAccountUser' { $selectedrows = @($allrows | Where-Object {$_.Row.AdministrativeAccountUser -ne $null}) } 
          default {}
     }
 
-    Write-Verbose ("Number of rows to be processed: {0}" -f  $selectedrows.Count)
+    Write-Verbose("Number of rows to be processed: {0}" -f  $selectedrows.Count)
 
     #process the rows batch by batch
     $startIndex = 0;            
@@ -189,7 +242,8 @@ function Centrify-InternalImportCSVRows
             'System' { $restArg.Resources = @($batchrows.Row) } 
             'Domain' {  $restArg.Domains = @($batchrows.Row) } 
             'Database' { $restArg.Databases = @($batchrows.Row) } 
-            'Account' {  $restArg.Accounts = @($batchrows.Row) } 
+            'Account' {  $restArg.Accounts = @($batchrows.Row) }
+            'AdminAccount' {  $restArg.Accounts = @($batchrows.Row) } 
             'AdministrativeAccountUser' {
                 $restArg.AdministrativeAccounts = [System.Collections.ArrayList]@()
                 ForEach ($rw in $batchrows.Row) {
