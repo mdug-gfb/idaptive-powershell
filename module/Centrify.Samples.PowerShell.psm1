@@ -41,6 +41,9 @@ function Centrify-InvokeREST {
         [bool]$includeSessionInResult = $false,
         [System.Security.Cryptography.X509Certificates.X509Certificate] $certificate = $null
     )
+    
+    //Force use of tls 1.2
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
                              
     $methodEndpoint = $endpoint + $method
     Write-Verbose "Calling $methodEndpoint"
