@@ -260,13 +260,9 @@ function Centrify-Internal-AdvanceForMech {
         $responseBstr = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($responseSecure)
         $responsePlain = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($responseBstr)
             
-        $advanceArgs.Answer = "PASSWORDGOESHERE"
+        $advanceArgs.Answer = $responsePlain
         $advanceArgs.Action = "Answer"
-
-        # Powershell's ConvertTo-Json likes to escape things, generally this is okay - but passwords shouldn't be touched
-        #  so instead we serialize to Json, then substitute the actual password.
-        $advanceArgsJson = $advanceArgs | ConvertTo-Json
-        $advanceArgsJson = $advanceArgsJson.Replace("PASSWORDGOESHERE", $responsePlain)                        
+        $advanceArgsJson = $advanceArgs | ConvertTo-Json                      
                         
         $advanceResult = (Centrify-InvokeREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -JsonContent $advanceArgsJson -WebSession $websession -IncludeSessionInResult $true).RestResult
         if($advanceResult.success -ne $true -or 
