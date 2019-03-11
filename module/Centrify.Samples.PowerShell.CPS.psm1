@@ -95,10 +95,7 @@ function Centrify-CPS-Import {
     $failedrows = @($rows | Where-Object  {(($_.RowResult.AddResult -eq  $null) -or (($_.RowResult.AddResult -ne  $null) -And ($_.RowResult.AddResult.Output.Result -eq "Failed")))})
     $successrows = @($rows | Where-Object {($_.RowResult.AddResult -ne  $null) -And ($_.RowResult.AddResult.Output.Result -eq "Success") -And ($_.RowResult.SetUpAdministrativeAccountsResult.Output.Result -ne  "Failed")})
     $warningsrows = @($rows | where { ($successrows -notcontains $_ ) -And ($failedrows -notcontains $_ ) }) | Sort-Object { [int]$_.rowIndex }
- 
-   
- 
-
+  
     # start processing results.
     # create a folder with date and time
     $date = get-date -format "yyyyMMdd_HHmmss"
@@ -257,6 +254,8 @@ function Centrify-InternalImportCSVRows
              default {}
         }
 
+        $operationResult = @{Result = @{}}
+
         try
         { 
             # make the API call.                   
@@ -264,7 +263,17 @@ function Centrify-InternalImportCSVRows
         } 
         catch
         {
-            Write-Warning ("API: " + $operation.API  + " failed. Error:  rows: " + $_.Exception.Message)        
+            # some unknown exception and the whole API call failed(none of input row is processed). Copy the exception as result for each row
+            $tempresults = @()
+            Write-Warning ("API: " + $operation.API  + " failed. Error: " + $_.Exception.Message)
+            ForEach ($item In $batchrows)
+            {
+                $failedResult = [PSCustomObject]@{'Output' = [PSCustomObject]@{ Result = 'Failed'
+                                                ID = ''
+                                                ErrorMessages = @($_.Exception.Message)}}
+                $tempresults += $failedResult
+            } 
+            $operationResult.Result = $tempresults               
         }
         
         if ($operationResult.success -ne $true)
