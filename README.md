@@ -1,6 +1,6 @@
 # Centrify.Samples.PowerShell
 
-Notes: This package contains code samples for the Centrify Identity Service Platform API's written in PowerShell.  
+Notes: This package contains code samples for the Centrify Identity Service Platform API's written in PowerShell. Please use PowerShell version 4 or above. 
 
 The sample is broken into 3 parts:
 
