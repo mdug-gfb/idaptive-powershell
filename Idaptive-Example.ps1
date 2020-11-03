@@ -1,4 +1,4 @@
-# Copyright 2016 Centrify Corporation
+# Copyright 2016 Idaptive Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,55 +17,55 @@ param(
     #Used for interactive auth only. Comment out for OAuth
     #[Parameter(Mandatory=$true)]
     #[string]$username = "",
-    [string]$endpoint = "https://cloud.centrify.com"
+    [string]$endpoint = "https://pod0.idaptive.app"
 )
 
 # Get the directory the example script lives in
 $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Import the Centrify.Samples.Powershell  and Centrify.Samples.PowerShell.CPS modules 
-Import-Module $exampleRootDir\module\Centrify.Samples.Powershell.psm1 3>$null 4>$null
-Import-Module $exampleRootDir\module\Centrify.Samples.PowerShell.CPS.psm1   3> $null 4>$null
-Import-Module $exampleRootDir\module\Centrify.Samples.PowerShell.CPS.Export.psm1   3> $null 4>$null
+# Import the Idaptive.Samples.Powershell  and Idaptive.Samples.PowerShell.CPS modules 
+Import-Module $exampleRootDir\module\Idaptive.Samples.Powershell.psm1 3>$null 4>$null
+Import-Module $exampleRootDir\module\Idaptive.Samples.PowerShell.CPS.psm1   3> $null 4>$null
+Import-Module $exampleRootDir\module\Idaptive.Samples.PowerShell.CPS.Export.psm1   3> $null 4>$null
 
 # If Verbose is enabled, we'll pass it through
 $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
 
 # Import sample function definitions
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.IssueUserCert.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.Query.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.GetUPData.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.GetRoleApps.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CreateUser.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.SetUserState.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.UpdateApplicationDE.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.HandleAppClick.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CheckProxyHealth.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.GetNicepLinks.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.GetPolicyBlock.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.SavePolicyBlock3.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.IssueUserCert.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.Query.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetUPData.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetRoleApps.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CreateUser.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.SetUserState.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.UpdateApplicationDE.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.HandleAppClick.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CheckProxyHealth.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetNicepLinks.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetPolicyBlock.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.SavePolicyBlock3.ps1
 # Import sample function definitions for CPS
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CPS.AddResource.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CPS.AddAccount.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CPS.UpdateMembersCollection.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.AddResource.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.AddAccount.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.UpdateMembersCollection.ps1
 
 try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
-    #  If you already have a bearer token and endpoint, no need to do this, just start using Centrify-InvokeREST
-    #$token = Centrify-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
+    #  If you already have a bearer token and endpoint, no need to do this, just start using Idaptive-InvokeREST
+    #$token = Idaptive-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Auth Code Flow.
-    #$token = Centrify-OAuthCodeFlow -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    #$token = Idaptive-OAuthCodeFlow -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Implicit Flow. 
-    #$token = Centrify-OAuthImplicit -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    #$token = Idaptive-OAuthImplicit -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
-    #Authorization using OAuth2 Cleint Credentials Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.centrify.com/reference#post_security-ondemandchallenge
-    $token = Centrify-OAuth-ClientCredentials -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    #Authorization using OAuth2 Cleint Credentials Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.app/reference#post_security-ondemandchallenge
+    $token = Idaptive-OAuth-ClientCredentials -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
-    #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.centrify.com/reference#post_security-ondemandchallenge
-    #$token = Centrify-OAuthResourceOwner -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Username "user@domain" -Password "password" -Scope "scope" -Verbose:$enableVerbose
+    #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.app/reference#post_security-ondemandchallenge
+    #$token = Idaptive-OAuthResourceOwner -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Username "user@domain" -Password "password" -Scope "scope" -Verbose:$enableVerbose
 
     # Issue a certificate for the logged in user. This only needs to be called once.
     #$userCert = IssueUserCert -Endpoint $token.Endpoint -BearerToken $token.BearerToken
@@ -78,11 +78,11 @@ try
     #Get a certificate from file for use instead of MFA login. This can be called after IssueUserCert has been completed and the certificate has been written to file.
     #$certificate = new-object System.Security.Cryptography.X509Certificates.X509Certificate2("C:\\$certificateFile")
 
-    #Negotiate an ASPXAUTH token from a certificate stored on file. This replaces the need for Centrify-InteractiveLogin-GetToken. This can be called after IssueUserCert has been completed and the certificate has been written to file.
-    #$token = Centrify-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
+    #Negotiate an ASPXAUTH token from a certificate stored on file. This replaces the need for Idaptive-InteractiveLogin-GetToken. This can be called after IssueUserCert has been completed and the certificate has been written to file.
+    #$token = Idaptive-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
             
     # Get information about the user who owns this token via /security/whoami     
-    $userInfo = Centrify-InvokeREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose     
+    $userInfo = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose     
     Write-Host "Current user: " $userInfo.Result.User
     
     # Run a query for top user logins from last 30 days
@@ -152,7 +152,7 @@ try
     #UpdateMembersCollection -Endpoint $token.Endpoint -BearerToken $token.BearerToken -id "setGUID" -key "AccountOrServerKey" -table "Server or VaultAccount"
 
     # Import CPS entities (Systems, Domains, Databases, Accounts) listed in a CSV file
-    #Centrify-CPS-Import -Endpoint  $token.Endpoint -Token  $token.BearerToken -CSVFile "C:\Sample\Sample.CSV" -Verbose:$enableVerbose
+    #Idaptive-CPS-Import -Endpoint  $token.Endpoint -Token  $token.BearerToken -CSVFile "C:\Sample\Sample.CSV" -Verbose:$enableVerbose
     
     # Escrow feature (export Systems, Domains, Databases, Accounts and their attributes into a CSV file and email it to designated recipients)
 	# Replace the args with args for your instance (i.e., FilePath, Emails) 
@@ -165,12 +165,12 @@ try
 	#Get-EscrowScheduleStatus -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
     
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
-    #$logoutResult = Centrify-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose           
+    #$logoutResult = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose           
 }
 finally
 {
-    # Always remove the Centrify.Samples.Powershell and Centrify.Samples.Powershell.CPS modules, makes development iteration on the module itself easier
-    Remove-Module Centrify.Samples.Powershell 4>$null
-    Remove-Module Centrify.Samples.Powershell.CPS 4>$null
-    Remove-Module Centrify.Samples.PowerShell.CPS.Export 4>$null
+    # Always remove the Idaptive.Samples.Powershell and Idaptive.Samples.Powershell.CPS modules, makes development iteration on the module itself easier
+    Remove-Module Idaptive.Samples.Powershell 4>$null
+    Remove-Module Idaptive.Samples.Powershell.CPS 4>$null
+    Remove-Module Idaptive.Samples.PowerShell.CPS.Export 4>$null
 }

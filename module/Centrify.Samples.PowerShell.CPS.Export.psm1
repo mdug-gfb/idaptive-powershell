@@ -1,5 +1,5 @@
 $scriptRoot = $PSScriptRoot
-Import-Module $PSScriptRoot\Centrify.Samples.PowerShell.psm1 3>$null 4>$null
+Import-Module $PSScriptRoot\Idaptive.Samples.PowerShell.psm1 3>$null 4>$null
 
 <# 
  .Synopsis
@@ -9,7 +9,7 @@ Import-Module $PSScriptRoot\Centrify.Samples.PowerShell.psm1 3>$null 4>$null
   For more details about how to generate the key pairs, please refer to https://www.openpgp.org/software/
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
@@ -18,7 +18,7 @@ Import-Module $PSScriptRoot\Centrify.Samples.PowerShell.psm1 3>$null 4>$null
   Required - The path of PGP public key file (e.g. C:\Test\test1)
   
  .Example
-  Set-EscrowKey -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com -FilePath 'C:\Test\test1'
+  Set-EscrowKey -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app -FilePath 'C:\Test\test1'
 #>
 
 function Set-EscrowKey
@@ -36,7 +36,7 @@ function Set-EscrowKey
     try
     {
         # Set Escrow key
-        $ret = Centrify-InvokeRESTFile -Endpoint $endpoint -Method "/ServerManage/SetEscrowKeyFromFile" -InFile $filePath -Token $token
+        $ret = Idaptive-InvokeRESTFile -Endpoint $endpoint -Method "/ServerManage/SetEscrowKeyFromFile" -InFile $filePath -Token $token
         Write-Host "SetEscrowKey Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
     }
     catch
@@ -53,7 +53,7 @@ function Set-EscrowKey
   The emails string is separated by ,/;/white space
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
@@ -62,7 +62,7 @@ function Set-EscrowKey
   Required - Escrow job email recipients separated by ,/;/white space
   
  .Example
-  Set-EscrowEmail -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com -Emails 'shirley.zhang@centrify.com, shirleybazinga@gmail.com' 
+  Set-EscrowEmail -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app -Emails 'shirley.zhang@idaptive.app, shirleybazinga@gmail.com' 
 #>
 
 function Set-EscrowEmail
@@ -81,7 +81,7 @@ function Set-EscrowEmail
     {
         # Set Escrow email recipients
         $emailArgs = @{ 'emails' = $emails }
-        $ret = Centrify-InvokeREST -Endpoint $endpoint -Method "/ServerManage/SetEscrowEmailAddresses" -ObjectContent $emailArgs -Token $token 
+        $ret = Idaptive-InvokeREST -Endpoint $endpoint -Method "/ServerManage/SetEscrowEmailAddresses" -ObjectContent $emailArgs -Token $token 
         Write-Host "SetEscrowEmail Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
     }
     catch
@@ -98,13 +98,13 @@ function Set-EscrowEmail
   The emails string is separated by ,/;/white space
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
 
  .Example
-  Get-EscrowEmail -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com
+  Get-EscrowEmail -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app
 #>
 
 function Get-EscrowEmail
@@ -120,7 +120,7 @@ function Get-EscrowEmail
     try
     {
         # Get Escrow email recipients
-        $ret = Centrify-InvokeREST -Endpoint $endpoint -Method "/ServerManage/GetEscrowEmailAddresses" -Token $token 
+        $ret = Idaptive-InvokeREST -Endpoint $endpoint -Method "/ServerManage/GetEscrowEmailAddresses" -Token $token 
         Write-Host "GetEscrowEmail Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
         Write-Host $ret.Result
     }
@@ -137,13 +137,13 @@ function Get-EscrowEmail
  .Description
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
 
  .Example
-  Run-Escrow -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com
+  Run-Escrow -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app
 #>
 
 function Run-Escrow
@@ -159,7 +159,7 @@ function Run-Escrow
     try
     {
         # Run on-demand Escrow job
-        $ret = Centrify-InvokeREST -Endpoint $endpoint -Method "/ServerManage/RunEscrow" -Token $token
+        $ret = Idaptive-InvokeREST -Endpoint $endpoint -Method "/ServerManage/RunEscrow" -Token $token
         Write-Host "RunEscrow Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
     }
     catch
@@ -176,13 +176,13 @@ function Run-Escrow
   Run Escrow job once a day
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
 
  .Example
-  Schedule-Escrow -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com
+  Schedule-Escrow -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app
 #>
 
 function Schedule-Escrow
@@ -198,7 +198,7 @@ function Schedule-Escrow
     try
     {
         # Schedule Escrow job
-        $ret = Centrify-InvokeREST -Endpoint $endpoint -Method "/ServerManage/ScheduleEscrow" -Token $token
+        $ret = Idaptive-InvokeREST -Endpoint $endpoint -Method "/ServerManage/ScheduleEscrow" -Token $token
         Write-Host "ScheduleEscrow Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
     }
     catch
@@ -215,13 +215,13 @@ function Schedule-Escrow
   Cancel scheduled Escrow job
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
  
  .Example
-  Unschedule-Escrow -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com
+  Unschedule-Escrow -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app
 #>
 
 function Unschedule-Escrow
@@ -237,7 +237,7 @@ function Unschedule-Escrow
     try
     {
         # Cancel scheduled Escrow job
-        $ret = Centrify-InvokeREST -Endpoint $endpoint -Method "/ServerManage/UnscheduleEscrow" -Token $token
+        $ret = Idaptive-InvokeREST -Endpoint $endpoint -Method "/ServerManage/UnscheduleEscrow" -Token $token
         Write-Host "UnscheduleEscrow Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
     }
     catch
@@ -254,13 +254,13 @@ function Unschedule-Escrow
   Check whether the Escrow job is scheduled, etc.
 
  .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
  .Parameter Token
   Required - The bearer token retrieved after authenticating, necessary for authenticated calls to succeed
 
  .Example
-  Get-EscrowScheduleStatus -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.centrify.com
+  Get-EscrowScheduleStatus -Username dev@shirleyz.net -Endpoint https://abc0123-dev.my-dev.idaptive.app
 #>
 
 function Get-EscrowScheduleStatus
@@ -276,7 +276,7 @@ function Get-EscrowScheduleStatus
     try
     {
         # Get Escrow job schedule status
-        $ret = Centrify-InvokeREST -Endpoint $endpoint -Method "/ServerManage/GetEscrowJobScheduleStatus" -Token $token 
+        $ret = Idaptive-InvokeREST -Endpoint $endpoint -Method "/ServerManage/GetEscrowJobScheduleStatus" -Token $token 
         Write-Host "GetEscrowScheduleStatus Result: Success? $($ret.success). $($ret.Message) $($ret.InnerExceptions.Message)"
         Write-Host "Escrow job scheduled: $($ret.Result)"
     }
@@ -294,7 +294,7 @@ function Get-EscrowScheduleStatus
   Performs a REST call against the CIS platform (PUT/GET for uploading/downloading file)
 
   .Parameter Endpoint
-  Required - The target host for the call (e.g. https://cloud.centrify.com)
+  Required - The target host for the call (e.g. https://pod0.idaptive.app)
  
   .Parameter Method
   Required - The method to call (e.g. /security/logout)
@@ -312,16 +312,16 @@ function Get-EscrowScheduleStatus
   Optional - Saves the response body in the specified output file
 
   .Example
-  Centrify-InvokeRestFile -Endpoint $endpoint -Method "/ServerManage/DownloadSecretFileInChunks" -FilePath $downloadFilePath -OutFile "~\Downloads\test.jpg" -Token $token
+  Idaptive-InvokeRestFile -Endpoint $endpoint -Method "/ServerManage/DownloadSecretFileInChunks" -FilePath $downloadFilePath -OutFile "~\Downloads\test.jpg" -Token $token
   
   .Example
-  Centrify-InvokeRestFile -Endpoint $endpoint -Method "/ServerManage/UploadSecretFileInChunks" -FilePath $uploadFilePath -InFile $secretFile -Token $token
+  Idaptive-InvokeRestFile -Endpoint $endpoint -Method "/ServerManage/UploadSecretFileInChunks" -FilePath $uploadFilePath -InFile $secretFile -Token $token
 
   .Example
-  Centrify-InvokeRESTFile -Endpoint $endpoint -Method "/ServerManage/SetEscrowKeyFromFilePath" -InFile $keyFilePath -Token $token 
+  Idaptive-InvokeRESTFile -Endpoint $endpoint -Method "/ServerManage/SetEscrowKeyFromFilePath" -InFile $keyFilePath -Token $token 
 #>
 
-function Centrify-InvokeRestFile
+function Idaptive-InvokeRestFile
 {
     [CmdletBinding()]
     param(

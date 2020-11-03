@@ -25,9 +25,9 @@
 
  .Example
    # Get current user details
-   Idaptive-InvokeREST -Endpoint "https://pod0.idaptive.app" -Method "/security/whoami" 
+   Invoke-IdaptiveREST-Endpoint "https://pod0.idaptive.app" -Method "/security/whoami" 
 #>
-function Idaptive-InvokeREST {
+function Invoke-IdaptiveREST {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -49,7 +49,7 @@ function Idaptive-InvokeREST {
     Write-Verbose "Calling $methodEndpoint"
     
     $addHeaders = @{ 
-        "X-CENTRIFY-NATIVE-CLIENT" = "1"
+        "X-IDAP-NATIVE-CLIENT" = "1"
     }
     
     if(![string]::IsNullOrEmpty($token))
@@ -58,7 +58,7 @@ function Idaptive-InvokeREST {
         $addHeaders.Authorization = "Bearer " + $token
     }
     
-    if($objectContent -ne $null)
+    if($null -ne $objectContent)
     {
         $jsonContent = $objectContent | ConvertTo-Json
     }
@@ -124,14 +124,14 @@ function Idaptive-InvokeREST {
 
  .Example
    # Get a token for API calls to abc123.idaptive.app
-   Idaptive-CertSsoLogin-GetToken -Endpoint "https://abc123.idaptive.app" 
+   Invoke-IdaptiveCertSsoLogin-GetToken -Endpoint "https://abc123.idaptive.app" 
 #>
-function Idaptive-CertSsoLogin-GetToken {
+function Invoke-IdaptiveCertSsoLoginToken {
     [CmdletBinding()]
     param(
-        [Parameter(Mandatory=$true)]
+        [Parameter]
         [string] $endpoint = "https://pod0.idaptive.app",
-        [Parameter(Mandatory=$true)]
+        [Parameter]
         [System.Security.Cryptography.X509Certificates.X509Certificate] $certificate = $null        
     )
         
@@ -139,7 +139,7 @@ function Idaptive-CertSsoLogin-GetToken {
     Write-Verbose "Initiating Certificate SSO against $endpoint with $subject"
     $noArg = @{}
                      
-    $restResult = Idaptive-InvokeREST -Endpoint $endpoint -Method "/negotiatecertsecurity/sso" -Token $null -ObjectContent $startArg -IncludeSessionInResult $true -Certificate $certificate                    
+    $restResult = Invoke-IdaptiveREST -Endpoint $endpoint -Method "/negotiatecertsecurity/sso" -Token $null -ObjectContent $startArg -IncludeSessionInResult $true -Certificate $certificate                    
     $startAuthResult = $restResult.RestResult                     
         
     # First, see if we need to repeat our call against a different pod 
@@ -170,9 +170,9 @@ function Idaptive-CertSsoLogin-GetToken {
 
  .Example
    # MFA login to pod0.idaptive.app
-   Idaptive-InteractiveLogin-GetToken -Endpoint "https://pod0.idaptive.app" 
+   Invoke-IdaptiveInteractiveLoginToken -Endpoint "https://pod0.idaptive.app" 
 #>
-function Idaptive-InteractiveLogin-GetToken {
+function Invoke-IdaptiveInteractiveLoginToken {
     [CmdletBinding()]
     param(
         [string] $endpoint = "https://pod0.idaptive.app",
@@ -185,15 +185,15 @@ function Idaptive-InteractiveLogin-GetToken {
     $startArg.User = $username
     $startArg.Version = "1.0"
                      
-    $restResult = Idaptive-InvokeREST -Endpoint $endpoint -Method "/security/startauthentication" -Token $null -ObjectContent $startArg -IncludeSessionInResult $true                     
+    $restResult = Invoke-IdaptiveREST -Endpoint $endpoint -Method "/security/startauthentication" -Token $null -ObjectContent $startArg -IncludeSessionInResult $true                     
     $startAuthResult = $restResult.RestResult                     
         
     # First, see if we need to repeat our call against a different pod 
-    if($startAuthResult.success -eq $true -and $startAuthResult.Result.PodFqdn -ne $null)
+    if($startAuthResult.success -eq $true -and $null -ne $startAuthResult.Result.PodFqdn)
     {        
         $endpoint = "https://" + $startAuthResult.Result.PodFqdn
         Write-Verbose "Auth redirected to $endpoint"
-        $restResult = Idaptive-InvokeREST -Endpoint $endpoint -Method "/security/startauthentication" -Token $null -ObjectContent $startArg -WebSession $restResult.WebSession -IncludeSessionInResult $true        
+        $restResult = Invoke-IdaptiveREST -Endpoint $endpoint -Method "/security/startauthentication" -Token $null -ObjectContent $startArg -WebSession $restResult.WebSession -IncludeSessionInResult $true        
         $startAuthResult = $restResult.RestResult 
     }
     
@@ -210,7 +210,7 @@ function Idaptive-InteractiveLogin-GetToken {
         # Present the user with the options available to them
         for($mechIdx = 0; $mechIdx -lt $challengeCollection[$x].Mechanisms.Count; $mechIdx++)
         {            
-            $mechDescription = Idaptive-Internal-MechToDescription -Mech $challengeCollection[$x].Mechanisms[$mechIdx]
+            $mechDescription = Invoke-IdaptiveInternalMechToDescription -Mech $challengeCollection[$x].Mechanisms[$mechIdx]
             Write-Host "Mechanism $mechIdx => $mechDescription" 
         }
                                 
@@ -220,7 +220,7 @@ function Idaptive-InteractiveLogin-GetToken {
             $selectedMech = Read-Host "Choose mechanism"            
         }             
                  
-        $mechResult = Idaptive-Internal-AdvanceForMech -Mech $challengeCollection[$x].Mechanisms[$selectedMech] -Endpoint $endpoint -TenantId $tenantId -SessionId $authSessionId -WebSession $restResult.WebSession                           
+        $mechResult = Invoke-IdaptiveInternalAdvanceForMech -Mech $challengeCollection[$x].Mechanisms[$selectedMech] -Endpoint $endpoint -TenantId $tenantId -SessionId $authSessionId -WebSession $restResult.WebSession                           
     }
             
     $finalResult = @{}
@@ -230,7 +230,7 @@ function Idaptive-InteractiveLogin-GetToken {
     Write-Output $finalResult        
 }
 
-function Idaptive-Internal-AdvanceForMech {
+function Invoke-IdaptiveInternalAdvanceForMech {
     param(
         $mech,
         $endpoint,
@@ -245,7 +245,7 @@ function Idaptive-Internal-AdvanceForMech {
     $advanceArgs.MechanismId = $mech.MechanismId
     $advanceArgs.PersistentLogin = $false
     
-    $prompt = Idaptive-Internal-MechToPrompt -Mech $mech
+    $prompt = Invoke-IdaptiveInternalMechToPrompt -Mech $mech
     
     # Password, or other 'secret' string
     if($mech.AnswerType -eq "Text" -or $mech.AnswerType -eq "StartTextOob")    
@@ -253,7 +253,7 @@ function Idaptive-Internal-AdvanceForMech {
         if($mech.AnswerType -eq "StartTextOob")
         {
             $advanceArgs.Action = "StartOOB"
-            $advanceResult = (Idaptive-InvokeREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -ObjectContent $advanceArgs -WebSession $websession -IncludeSessionInResult $true).RestResult            
+            $advanceResult = (Invoke-IdaptiveREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -ObjectContent $advanceArgs -WebSession $websession -IncludeSessionInResult $true).RestResult            
         }
             
         $responseSecure = Read-Host $prompt -assecurestring
@@ -264,7 +264,7 @@ function Idaptive-Internal-AdvanceForMech {
         $advanceArgs.Action = "Answer"
         $advanceArgsJson = $advanceArgs | ConvertTo-Json                      
                         
-        $advanceResult = (Idaptive-InvokeREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -JsonContent $advanceArgsJson -WebSession $websession -IncludeSessionInResult $true).RestResult
+        $advanceResult = (Invoke-IdaptiveREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -JsonContent $advanceArgsJson -WebSession $websession -IncludeSessionInResult $true).RestResult
         if($advanceResult.success -ne $true -or 
             ($advanceResult.Result.Summary -ne "StartNextChallenge" -and $advanceResult.Result.Summary -ne "LoginSuccess" -and $advanceResult.Result.Summary -ne "NewPackage")
         )
@@ -280,14 +280,14 @@ function Idaptive-Internal-AdvanceForMech {
     {
             # We ping advance once to get the OOB mech going, then poll for success or abject fail
             $advanceArgs.Action = "StartOOB"
-            $advanceResult = (Idaptive-InvokeREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -ObjectContent $advanceArgs -WebSession $websession -IncludeSessionInResult $true).RestResult
+            $advanceResult = (-Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -ObjectContent $advanceArgs -WebSession $websession -IncludeSessionInResult $true).RestResult
             
             Write-Host $prompt
             $advanceArgs.Action = "Poll"
             do
             {
                 Write-Host -NoNewline "."
-                $advanceResult = (Idaptive-InvokeREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -ObjectContent $advanceArgs -WebSession $websession -IncludeSessionInResult $true).RestResult
+                $advanceResult = (Invoke-IdaptiveREST -Endpoint $endpoint -Method "/security/advanceauthentication" -Token $null -ObjectContent $advanceArgs -WebSession $websession -IncludeSessionInResult $true).RestResult
                 Start-Sleep -s 1                    
             } while($advanceResult.success -eq $true -and $advanceResult.Result.Summary -eq "OobPending")
             
@@ -306,12 +306,12 @@ function Idaptive-Internal-AdvanceForMech {
 }
 
 # Internal function, maps mechanism to description for selection
-function Idaptive-Internal-MechToDescription {
+function Invoke-IdaptiveInternalMechToDescription {
     param(
         $mech
     )
     
-    if($mech.PromptSelectMech -ne $null)
+    if($null -ne $mech.PromptSelectMech)
     {
         return $mech.PromptSelectMech
     }
@@ -344,12 +344,12 @@ function Idaptive-Internal-MechToDescription {
 }
 
 # Internal function, maps mechanism to prompt once selected
-function Idaptive-Internal-MechToPrompt {
+function Invoke-IdaptiveInternalMechToPrompt {
     param(
         $mech        
     )
     
-    if($mech.PromptMechChosen -ne $null)
+    if($null -ne $mech.PromptMechChosen)
     {
         return $mech.PromptMechChosen
     }
@@ -394,9 +394,9 @@ function Idaptive-Internal-MechToPrompt {
 
  .Example
    # Get an OAuth2 token for API calls to abc123.idaptive.app
-   Idaptive-OAuthCodeFlow -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+   Invoke-IdaptiveOAuthCodeFlow -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
 #>
-function Idaptive-OAuthCodeFlow()
+function Invoke-IdaptiveOAuthCodeFlow()
 {
 
     [CmdletBinding()]
@@ -422,7 +422,7 @@ function Idaptive-OAuthCodeFlow()
 	$config.clientSecret =  $clientsecret
 	$config.scope = $scope
 
-	$restResult = idaptive-InternalOAuthCodeFlow $config
+	$restResult = Invoke-IdaptiveInternalOAuthCodeFlow $config
 
     $finalResult = @{}
     $finalResult.Endpoint = $endpoint    
@@ -445,9 +445,9 @@ function Idaptive-OAuthCodeFlow()
 
  .Example
    # Get an OAuth2 token for API calls to abc123.idaptive.app
-   Idaptive-OAuthImplicit -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+   Invoke-IdaptiveOAuthImplicit -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
 #>
-function Idaptive-OAuthImplicit()
+function Invoke-IdaptiveOAuthImplicit()
 {
 
    [CmdletBinding()]
@@ -472,7 +472,7 @@ function Idaptive-OAuthImplicit()
 	$config.clientSecret =  $clientsecret
 	$config.scope = $scope
 
-	$restResult = idaptive-InternalImplicitFlow $config
+	$restResult = Invoke-IdaptiveInternalImplicitFlow $config
 
     $finalResult = @{}
     $finalResult.Endpoint = $endpoint    
@@ -494,9 +494,9 @@ function Idaptive-OAuthImplicit()
 
  .Example
    # Get an OAuth2 token for API calls to abc123.idaptive.app
-   Idaptive-OAuth-ClientCredentials -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+   Invoke-IdaptiveOAuthClientCredentials -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
 #>
-function Idaptive-OAuth-ClientCredentials
+function Invoke-IdaptiveOAuthClientCredentials
 {
     [CmdletBinding()]
     param(
@@ -516,7 +516,7 @@ function Idaptive-OAuth-ClientCredentials
     $bod = @{}
     $bod.grant_type = "client_credentials"
     $bod.scope = $scope
-    $basic = Idaptive-InternalMakeClientAuth $clientid $clientsecret
+    $basic = Invoke-IdaptiveInternalBasicAuth $clientid $clientsecret
     $restResult = Invoke-RestMethod -Method Post -Uri $api -Headers $basic -Body $bod
 
     $finalResult = @{}
@@ -539,9 +539,9 @@ function Idaptive-OAuth-ClientCredentials
 
  .Example
    # Get an OAuth2 token for API calls to abc123.idaptive.app
-   Idaptive-OAuthResourceOwner -Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
+   Invoke-IdaptiveOAuthResourceOwner-Endpoint "https://abc123.idaptive.app" -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope"
 #>
-function Idaptive-OAuthResourceOwner
+function Invoke-IdaptiveOAuthResourceOwner
 {
     [CmdletBinding()]
     param(
@@ -568,7 +568,7 @@ function Idaptive-OAuthResourceOwner
 
     if($clientsecret)
     {
-        $basic = Idaptive-InternalMakeClientAuth $clientid $clientsecret
+        $basic = Invoke-IdaptiveInternalBasicAuth $clientid $clientsecret
     }
     else
     {
@@ -586,7 +586,7 @@ function Idaptive-OAuthResourceOwner
 }
 
 #Internal function for Auth Code Flow. Returns OAuth2 Access JWT Token
-function Idaptive-InternalOAuthCodeFlow($ocfg)
+function Invoke-IdaptiveInternalOAuthCodeFlow($ocfg)
 
 {
 
@@ -690,7 +690,7 @@ function Idaptive-InternalOAuthCodeFlow($ocfg)
 }
 
 #Internal function for Implicit Flow. Returns OAuth2 Access JWT Token
-function Idaptive-InternalImplicitFlow($ocfg)
+function Invoke-IdaptiveInternalImplicitFlow($ocfg)
 {
 
 	Add-Type -AssemblyName System.Windows.Forms
@@ -781,7 +781,7 @@ function Idaptive-InternalImplicitFlow($ocfg)
 }
 
 #Internal function. Returns base64 encoded auth token for basic Authorizatioin header.
-function Idaptive-InternalMakeClientAuth($id,$secret)
+function Invoke-IdaptiveInternalBasicAuth ($id,$secret)
 {
     # http basic authorization header for token request
     $b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($id):$($secret)"))
@@ -789,10 +789,10 @@ function Idaptive-InternalMakeClientAuth($id,$secret)
     return $basic
 }
 
-Export-ModuleMember -function Idaptive-InvokeREST
-Export-ModuleMember -function Idaptive-InteractiveLogin-GetToken
-Export-ModuleMember -function Idaptive-CertSsoLogin-GetToken
-Export-ModuleMember -function Idaptive-OAuthCodeFlow
-Export-ModuleMember -function Idaptive-OAuthImplicit
-Export-ModuleMember -function Idaptive-OAuth-ClientCredentials
-Export-ModuleMember -function Idaptive-OAuthResourceOwner
+Export-ModuleMember -function Invoke-IdaptiveREST
+Export-ModuleMember -function Invoke-IdaptiveInteractiveLoginToken
+Export-ModuleMember -function Invoke-IdaptiveCertSsoLoginToken
+Export-ModuleMember -function Invoke-IdaptiveOAuthCodeFlow
+Export-ModuleMember -function Invoke-IdaptiveOAuthImplicit
+Export-ModuleMember -function Invoke-IdaptiveOAuth-ClientCredentials
+Export-ModuleMember -function Invoke-IdaptiveOAuthResourceOwner

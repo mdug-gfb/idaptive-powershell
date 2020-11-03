@@ -1,6 +1,5 @@
-
 $scriptRoot = $PSScriptRoot
-Import-Module $PSScriptRoot\Idaptive.Samples.PowerShell.psm1   3>$null 4>$null
+Import-Module $PSScriptRoot\Idaptive-PowerShell.psm1   3>$null 4>$null
 
 <# 
  .Synopsis
@@ -12,7 +11,7 @@ Import-Module $PSScriptRoot\Idaptive.Samples.PowerShell.psm1   3>$null 4>$null
   Required - The target host for the call (i.e. https://pod0.idaptive.app)
 
   .Parameter Token
-  Required - Login token returned by the Idaptive-Enroll 
+  Required - Login token returned by the Invoke-IdaptiveInteractiveLoginToken
 
   .Parameter CSVFileName
   Required - CSV file to be imported
@@ -24,11 +23,11 @@ Import-Module $PSScriptRoot\Idaptive.Samples.PowerShell.psm1   3>$null 4>$null
              WarningRows.txt  - Import result for rows that are imported with some errors.
              AllRows.txt      - Import result for all rows
   .Example
-  Idaptive-AddAccount -Endpoint 'https://pod0.idaptive.app'  -Token $token  -CSVFile 'cpsimport.csv'
+  New-IdaptiveAccount -Endpoint 'https://pod0.idaptive.app'  -Token $token  -CSVFile 'cpsimport.csv'
 
 #>
 
-function Idaptive-CPS-Import {
+function Import-Idaptive-CPS {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory=$true)]
@@ -57,7 +56,7 @@ function Idaptive-CPS-Import {
         @{'Id' = 'Account'; 'API' = '/ServerManage/AddAccounts'; 'ResultType' = 'AddResult';  'MaximumEntities'= $accountBatchCount }) 
     
     #check version
-    $versionInfo = Idaptive-InvokeREST  -Endpoint $endpoint -Method "/sysinfo/version" -Token $token -Verbose:$enableVerbose     
+    $versionInfo = Invoke-IdaptiveREST  -Endpoint $endpoint -Method "/sysinfo/version" -Token $token -Verbose:$enableVerbose     
     $major,$minor,$v3=$versionInfo.Result.Cloud.split(".",3)
     Write-Verbose "Current Version: $major.$minor "    
     if ( $major -lt 18 -or ( $major -eq 18 -and $minor -lt 4 ))
@@ -88,13 +87,13 @@ function Idaptive-CPS-Import {
     foreach ($operation in $operations)
     {
         Write-Verbose ("Importing: {0}, API: {1}, maxmium batch count: {2}"  -f $operation.Id, $operation.API, $operation.MaximumEntities)
-        Idaptive-InternalImportCSVRows $endpoint $token $rows $operation
+        Import-IdaptiveInternalCSVRows $endpoint $token $rows $operation
     }
     
     # group the results based on the result type
     $failedrows = @($rows | Where-Object  {(($_.RowResult.AddResult -eq  $null) -or (($_.RowResult.AddResult -ne  $null) -And ($_.RowResult.AddResult.Output.Result -eq "Failed")))})
     $successrows = @($rows | Where-Object {($_.RowResult.AddResult -ne  $null) -And ($_.RowResult.AddResult.Output.Result -eq "Success") -And ($_.RowResult.SetUpAdministrativeAccountsResult.Output.Result -ne  "Failed")})
-    $warningsrows = @($rows | where { ($successrows -notcontains $_ ) -And ($failedrows -notcontains $_ ) }) | Sort-Object { [int]$_.rowIndex }
+    $warningsrows = @($rows | Where-Object { ($successrows -notcontains $_ ) -And ($failedrows -notcontains $_ ) }) | Sort-Object { [int]$_.rowIndex }
   
     # start processing results.
     # create a folder with date and time
@@ -105,7 +104,7 @@ function Idaptive-CPS-Import {
     New-Item $resultDir -ItemType directory
    
     #create ouput files
-    $summary = Idaptive-InternalCreateImportSummary $csvfile $rows $failedrows $warningsrows $successrows
+    $summary = New-IdaptiveInternalImportSummary $csvfile $rows $failedrows $warningsrows $successrows
     Write-Verbose $summary
     try
     {
@@ -119,17 +118,17 @@ function Idaptive-CPS-Import {
         #Create failedrows.txt. This file list failed rows and the reason for failure
         New-Item $resultDir\FailedRows.txt -ItemType file -Value  $summary
         Add-Content $resultDir\FailedRows.txt   -Value "-----------Failed rows-----------"    
-        $failedrows | ForEach-Object { Idaptive-InternalImportResult($_) | Add-Content $resultDir\FailedRows.txt -Encoding UTF8 }
+        $failedrows | ForEach-Object { Import-IdaptiveInternalResult($_) | Add-Content $resultDir\FailedRows.txt -Encoding UTF8 }
       
         #Create warningrows.txt. This file list all rows that are imported with some warnings         
         New-Item $resultDir\WarningRows.txt -ItemType file -Value  $summary
         Add-Content $resultDir\WarningRows.txt  -Value "-----------Rows added with some errors-----------"
-        $warningsrows| ForEach-Object { Idaptive-InternalImportResult($_) | Add-Content $resultDir\WarningRows.txt -Encoding UTF8 }
+        $warningsrows| ForEach-Object { Import-IdaptiveInternalResult($_) | Add-Content $resultDir\WarningRows.txt -Encoding UTF8 }
 
         #create allRows.txt. This file list all rows               
         New-Item $resultDir\AllRows.txt -ItemType file -Value  $summary
         Add-Content $resultDir\AllRows.txt  -Value "-----------All rows-----------"
-        $rows |  ForEach-Object { Idaptive-InternalImportResult($_) | Add-Content $resultDir\AllRows.txt  -Encoding UTF8}
+        $rows |  ForEach-Object { Import-IdaptiveInternalResult($_) | Add-Content $resultDir\AllRows.txt  -Encoding UTF8}
     } 
     catch
     {
@@ -140,7 +139,7 @@ function Idaptive-CPS-Import {
 }
 
 
-function Idaptive-FindAdminAccounts
+function Get-IdaptiveAdminAccounts
 {
     Param([Parameter(position=0)] [REF]$selectedadminrows)
 
@@ -178,7 +177,7 @@ function Idaptive-FindAdminAccounts
 
 
 #Internal function. Run specified operation on rows
-function Idaptive-InternalImportCSVRows
+function Import-IdaptiveInternalCSVRows
 {
    Param(
         [Parameter(position=0)]
@@ -202,14 +201,14 @@ function Idaptive-InternalImportCSVRows
         'Database' { $selectedrows = @($allrows | Where-Object {$_.Row.EntityType -eq 'Database'}) }
         'AdminAccount' { # Get all admin accounts
                 $selectedrows  = @()     
-                Idaptive-FindAdminAccounts([REF]$selectedrows)
+                Get-IdaptiveAdminAccounts([REF]$selectedrows)
                 Write-Verbose("Total # Admin accounts to be created: {0}" -f  $selectedrows.Count)
          }
         'Account' {  # get all non admin accounts
                 $selectedrows = @($allrows | Where-Object {($_.Row.EntityType -eq 'Account')} ) 
                 Write-Verbose("Total # accounts to be created: {0}" -f  $selectedrows.Count)
                 $alreadyCreatedAccounts  = @()     
-                Idaptive-FindAdminAccounts([REF]$alreadyCreatedAccounts)
+                Get-IdaptiveAdminAccounts([REF]$alreadyCreatedAccounts)
                 Write-Verbose("# accounts already created: {0}" -f  $alreadyCreatedAccounts.Count) 
                 foreach($addedaccount in $alreadyCreatedAccounts) {
                     $selectedrows = @($selectedrows | Where-Object { $addedaccount.RowIndex -notcontains $_.RowIndex })
@@ -259,7 +258,7 @@ function Idaptive-InternalImportCSVRows
         try
         { 
             # make the API call.                   
-            $operationResult = Idaptive-InvokeREST -Endpoint $endpoint -Method $operation.API -Token $token -ObjectContent $restArg -Verbose:$enableVerbose
+            $operationResult = Invoke-IdaptiveREST -Endpoint $endpoint -Method $operation.API -Token $token -ObjectContent $restArg -Verbose:$enableVerbose
         } 
         catch
         {
@@ -302,7 +301,7 @@ function Idaptive-InternalImportCSVRows
 }
 
 #Internal function. Creates import summary
-function Idaptive-InternalCreateImportSummary
+function New-IdaptiveInternalImportSummary
 {
 
    Param(
@@ -349,7 +348,7 @@ function Idaptive-InternalCreateImportSummary
     return $summary
 }
 
-function Idaptive-InternalImportResult
+function Import-IdaptiveInternalResult
 {
    Param(
         [parameter(position=0)]

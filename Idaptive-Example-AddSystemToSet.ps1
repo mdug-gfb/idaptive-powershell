@@ -1,4 +1,4 @@
-# Copyright 2016 Centrify Corporation
+# Copyright 2016 Idaptive Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,30 +16,30 @@
 param(
     [Parameter(Mandatory=$true)]
     [string]$username,
-    [string]$endpoint = "https://cloud.centrify.com"
+    [string]$endpoint = "https://pod0.idaptive.app"
 )
 
 # Get the directory the example script lives in
 $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Import the Centrify.Samples.Powershell module
-Import-Module $exampleRootDir\module\Centrify.Samples.Powershell.psm1 3>$null 4>$null
+# Import the Idaptive.Samples.Powershell module
+Import-Module $exampleRootDir\module\Idaptive.Samples.Powershell.psm1 3>$null 4>$null
 
 # If Verbose is enabled, we'll pass it through
 $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
 
 # Import sample function definitions
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.IssueUserCert.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.Query.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.IssueUserCert.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.Query.ps1
 # Import sample function definitions for CPS
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CPS.UpdateMembersCollection.ps1
-. $exampleRootDir\functions\Centrify.Samples.PowerShell.CPS.GetSetID.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.UpdateMembersCollection.ps1
+. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.GetSetID.ps1
 
 try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
-    #  If you already have a bearer token and endpoint, no need to do this, just start using Centrify-InvokeREST
-    $token = Centrify-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose
+    #  If you already have a bearer token and endpoint, no need to do this, just start using Idaptive-InvokeREST
+    $token = Idaptive-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose
 
     # Issue a certificate for the logged in user. This only needs to be called once.
     #$userCert = IssueUserCert -Endpoint $token.Endpoint -BearerToken $token.BearerToken
@@ -52,11 +52,11 @@ try
     #Get a certificate from file for use instead of MFA login. This can be called after IssueUserCert has been completed and the certificate has been written to file.
     #$certificate = new-object System.Security.Cryptography.X509Certificates.X509Certificate2("C:\\$certificateFile")
 
-    #Negotiate an ASPXAUTH token from a certificate stored on file. This replaces the need for Centrify-InteractiveLogin-GetToken. This can be called after IssueUserCert has been completed and the certificate has been written to file.
-    #$token = Centrify-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
+    #Negotiate an ASPXAUTH token from a certificate stored on file. This replaces the need for Idaptive-InteractiveLogin-GetToken. This can be called after IssueUserCert has been completed and the certificate has been written to file.
+    #$token = Idaptive-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
 
     # Get information about the user who owns this token via /security/whoami
-    $userInfo = Centrify-InvokeREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose
+    $userInfo = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose
     Write-Host "Current user: " $userInfo.Result.User
 
       #Enter the hostname of the system and the name of the set below
@@ -81,7 +81,7 @@ try
             Write-Host "Adding system $computer to $systemset set..."
             UpdateMembersCollection -Endpoint $token.Endpoint -BearerToken $token.BearerToken -ID $setid -key $systemkey -table $servertable
         }else{
-            Write-Host "Set $systemset not found...aborted member add. Please check that this set exists already in your Centrify instance and that you have permissions to edit the set."
+            Write-Host "Set $systemset not found...aborted member add. Please check that this set exists already in your Idaptive instance and that you have permissions to edit the set."
         }
 
       }else{
@@ -89,10 +89,10 @@ try
       }
 
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
-    $logoutResult = Centrify-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose
+    $logoutResult = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose
 }
 finally
 {
-    # Always remove the Centrify.Samples.Powershell module, makes development iteration on the module itself easier
-    Remove-Module Centrify.Samples.Powershell 4>$null
+    # Always remove the Idaptive.Samples.Powershell module, makes development iteration on the module itself easier
+    Remove-Module Idaptive.Samples.Powershell 4>$null
 }
