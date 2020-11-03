@@ -1,3 +1,5 @@
+#This example is currently broken.
+
 # Copyright 2016 Idaptive Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +39,10 @@ try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
     #  If you already have a bearer token and endpoint, no need to do this, just start using Invoke-IdaptiveREST
-    $token = Invoke-IdaptiveInteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose
+    if($null -eq $token)
+    {
+      $token = Invoke-IdaptiveInteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose
+    }
 
     # Issue a certificate for the logged in user. This only needs to be called once.
     #$userCert = IssueUserCert -Endpoint $token.Endpoint -BearerToken $token.BearerToken
@@ -51,7 +56,7 @@ try
     #$certificate = new-object System.Security.Cryptography.X509Certificates.X509Certificate2("C:\\$certificateFile")
 
     #Negotiate an ASPXAUTH token from a certificate stored on file. This replaces the need for Idaptive-InteractiveLogin-GetToken. This can be called after IssueUserCert has been completed and the certificate has been written to file.
-    #$token = Idaptive-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
+    #$token = Invoke-IdaptiveCertSsoLoginToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
 
     # Get information about the user who owns this token via /security/whoami
     $userInfo = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose
@@ -59,20 +64,20 @@ try
 
       #Enter the hostname of the system and the name of the set below
       $computer = "mduggan-mbp"
-      $systemset = "MacSet"
+      $systemset = "OS X"
       #Note that the HostName is case-sensitive and both the HostName and SetName must exist in CPS prior to executing this script
 
       $systemkey = ""
       $servertable = "Server"
 
       #get the system ID
-      $query = "select ID from Server where Name = '$computer'"
+      $query = "select ID from Device where Name = '$computer'"
       $systemquery = Query -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Query $query
       $systemkey = $systemquery.Results[0].Row.ID
       if ($systemkey.Length -gt 0)
       {
         #get system set ID
-        $setid = GetSetID -Endpoint $token.Endpoint -BearerToken $token.BearerToken -ObjectType "Server" -name $systemset
+        $setid = GetSetID -Endpoint $token.Endpoint -BearerToken $token.BearerToken -ObjectType "Device" -name $systemset
 
         if ($setid -ne 0)
         {
@@ -87,7 +92,7 @@ try
       }
 
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
-    $logoutResult = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose
+    #$logoutResult = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose
 }
 finally
 {

@@ -15,11 +15,12 @@
 [CmdletBinding()]
 param(
     #Used for interactive auth only. Comment out for OAuth
-    #[Parameter(Mandatory=$true)]
-    #[string]$username = "",
+    [Parameter(Mandatory=$true)]
+    [string]$username = "",
     [string]$endpoint = "https://pod0.idaptive.app"
 )
 
+$domain="@"+$username.Split("@")[1]
 # Get the directory the example script lives in
 $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
@@ -36,7 +37,6 @@ $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
 . $exampleRootDir\functions\Idaptive-GetRoleApps.ps1
 . $exampleRootDir\functions\Idaptive-CreateUser.ps1
 . $exampleRootDir\functions\Idaptive-SetUserState.ps1
-. $exampleRootDir\functions\Idaptive-UpdateApplicationDE.ps1
 . $exampleRootDir\functions\Idaptive-HandleAppClick.ps1
 . $exampleRootDir\functions\Idaptive-CheckProxyHealth.ps1
 . $exampleRootDir\functions\Idaptive-GetNicepLinks.ps1
@@ -48,7 +48,10 @@ try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
     #  If you already have a bearer token and endpoint, no need to do this, just start using Invoke-IdaptiveREST
-    #$token = Invoke-InteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
+    if($null -eq $token)
+    {
+        $token = Invoke-IdaptiveInteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
+    }
 
     #Authorization using OAuth2 Auth Code Flow.
     #$token = Invoke-IdaptiveOAuthCodeFlow -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
@@ -56,10 +59,10 @@ try
     #Authorization using OAuth2 Implicit Flow. 
     #$token = Invoke-IdaptiveOAuthImplicit -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
-    #Authorization using OAuth2 Cleint Credentials Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.app/reference#post_security-ondemandchallenge
-    $token = Invoke-IdaptiveOAuthClientCredentials  -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    #Authorization using OAuth2 Client Credentials Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.com/reference#post_security-ondemandchallenge
+    #$token = Invoke-IdaptiveOAuthClientCredentials  -Endpoint $endpoint -Appid "applicationId" -Clientid "mduggan@goldfinchbio.com" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
-    #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.app/reference#post_security-ondemandchallenge
+    #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.com/reference#post_security-ondemandchallenge
     #$token = Idaptive-OAuthResourceOwner -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Username "user@domain" -Password "password" -Scope "scope" -Verbose:$enableVerbose
 
     # Issue a certificate for the logged in user. This only needs to be called once.
@@ -81,76 +84,67 @@ try
     Write-Host "Current user: " $userInfo.Result.User
     
     # Run a query for top user logins from last 30 days
-    #$query = "select NormalizedUser as User, Count(*) as Count from Event where EventType = 'Cloud.Core.Login' and WhenOccurred >= DateFunc('now', '-30') group by User order by count desc"
-    #$queryResult = Query -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Query $query            
-    #Write-Host "Query resulted in " $queryResult.FullCount " results, first row is: " $queryResult.Results[0].Row    
+    $query = "select NormalizedUser as User, Count(*) as count from Event where EventType = 'Cloud.Core.Login' and WhenOccurred >= DateFunc('now', '-30') group by User order by count desc"
+    $queryResult = Query -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Query $query            
+    Write-Host "Query resulted in " $queryResult.FullCount " results, first row is: " $queryResult.Results[0].Row    
         
     # Get user's assigned applications
-    #$myApplications = GetUPData -Endpoint $token.Endpoint -BearerToken $token.BearerToken
-    #foreach($app in $myApplications)
-    #{
-        #Write-Host "Assigned to me => Name: " $app.DisplayName " Key: " $app.AppKey " Icon: " $app.Icon
-    #} 
+    $myApplications = GetUPData -Endpoint $token.Endpoint -BearerToken $token.BearerToken
+    foreach($app in $myApplications)
+    {
+        Write-Host "Assigned to me => Name: " $app.DisplayName " Key: " $app.AppKey " Icon: " $app.Icon
+    } 
     
     # Get apps assigned to sysadmin role
     #$sysadminApps = GetRoleApps -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Role "sysadmin"
-    #foreach($app in $sysadminApps)
-    #{
-    #    Write-Host "Assigned to sysadmin role members => Key: " $app.Row.ID
-    #}    
+    foreach($app in $sysadminApps)
+    {
+        Write-Host "Assigned to sysadmin role members => Key: " $app.Row.ID
+    }    
     
-    # Create a new CUS user
-    #$newUserUUID = CreateUser -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Username "apitest@contoso" -Password "newP@3651awdF@!%^"
-    #Write-Host "Create user result: " $newUserUUID
+    # Create a new Idaptive Cloud Directory user
+    $newUserUUID = CreateUser -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Username "apitest+$domain" -Password "newP@3651awdF@!%^"
+    Write-Host "Create user result: " $newUserUUID
                    
-    # Lock a CUS user
-    #SetUserState -Endpoint $token.Endpoint -BearerToken $token.BearerToken -UserUuid $newUserUUID -NewState "Locked"
+    # Lock a Idaptive Cloud Directory user
+    SetUserState -Endpoint $token.Endpoint -BearerToken $token.BearerToken -UserUuid $newUserUUID -NewState "Locked"
 
-    # Unlock a CUS user            
-    #SetUserState -Endpoint $token.Endpoint -BearerToken $token.BearerToken -UserUuid $newUserUUID -NewState "None"
+    # Unlock a Idaptive Cloud Directory user            
+    SetUserState -Endpoint $token.Endpoint -BearerToken $token.BearerToken -UserUuid $newUserUUID -NewState "None"
         
     # Update the credentials for my UP app...
     #UpdateApplicationDE -Endpoint $token.Endpoint -BearerToken $token.BearerToken -AppKey "someAppKeyFromGetUPData" -Username "newUsername" -Password "newPassword"  
     
     # Simulate an App Click and return SAML Response...
-    #$appClickResult = HandleAppClick -Endpoint $token.Endpoint -BearerToken $token.BearerToken -AppKey "37864871-0004-47f1-bbb6-09a33ee6ea9f"   
+    $appClickResult = HandleAppClick -Endpoint $token.Endpoint -BearerToken $token.BearerToken -AppKey "use-app-key"   
     # Parse out SAML Response
-    #$appClickResult -match "value=(?<content>.*)/>" 
+    $appClickResult -match "value=(?<content>.*)/>" 
     #Clean SAML Response
-    #$SAMLResponse = $matches['content'].Replace('"', "")
+    $SAMLResponse = $matches['content'].Replace('"', "")
     #Print SAML Response
-    #Write-Host $SAMLResponse
+    Write-Host $SAMLResponse
     
     # Check Cloud Connector Health
     #Get a list of connectors registered to a tenant using a Redrock Query and then loop through the connector list and write results to file.
-    #$connectorUuidList = Query -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Query "select MachineName, ID from proxy"     
-    #foreach($row in $connectorUuidList.Results)
-    #{
-        #Write-Host "Checking health of Cloud Connector on" $row.Row.MachineName
-        #$connectorHealth = CheckProxyHealth -Endpoint $token.Endpoint -BearerToken $token.BearerToken -ProxyUuid $row.Row.ID
-        #$connectorHealth.Connectors| ConvertTo-Json | Out-File -Append ("C:\filelocation\" + $row.Row.MachineName + ".json")        
-    #}
+    $connectorUuidList = Query -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Query "select MachineName, ID from proxy"     
+    foreach($row in $connectorUuidList.Results)
+    {
+        Write-Host "Checking health of Cloud Connector on" $row.Row.MachineName
+        $connectorHealth = CheckProxyHealth -Endpoint $token.Endpoint -BearerToken $token.BearerToken -ProxyUuid $row.Row.ID
+        $connectorHealth.Connectors| ConvertTo-Json | Out-File -Append ("C:\temp\" + $row.Row.MachineName + ".json")        
+    }
 
     #Get/Save Policy
-    #$getPolicyLinksResult = GetNicepLinks -Endpoint $token.Endpoint -BearerToken $token.BearerToken
-    #$getPolicyBlockResult = GetPolicyBlock -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Name "/Policy/name"
-    #$savePolicyBlock = SavePolicyBlock -Endpoint $token.Endpoint -BearerToken $token.BearerToken -PolicyJsonBlock $getPolicyBlockResult
- 
-    # Escrow feature (export Systems, Domains, Databases, Accounts and their attributes into a CSV file and email it to designated recipients)
-	# Replace the args with args for your instance (i.e., FilePath, Emails) 
-	#Set-EscrowKey -Endpoint $token.Endpoint -Token $token.BearerToken -FilePath 'C:\pubKey.asc' -Verbose:$enableVerbose 
-	#Set-EscrowEmail -Endpoint $token.Endpoint -Token $token.BearerToken -Emails 'admin1@company1.com, admin2@company2.com' -Verbose:$enableVerbose 
-	#Get-EscrowEmail -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
-	#Run-Escrow -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
-	#Schedule-Escrow -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
-	#Unschedule-Escrow -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
-	#Get-EscrowScheduleStatus -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
-    
+    $getPolicyLinksResult = GetNicepLinks -Endpoint $token.Endpoint -BearerToken $token.BearerToken
+    $policy=$getPolicyLinksResult.Results[0].Row.ID
+    $getPolicyBlockResult = GetPolicyBlock -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Name $policy
+    #$savePolicyBlock = SavePolicyBlock -Endpoint $token.Endpoint -BearerToken $token.BearerToken -PolicyJsonBlock $getPolicyBlockResult.Settings
+
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
     #$logoutResult = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose           
 }
 finally
 {
     # Always remove the Idaptive.Samples.Powershell and Idaptive-CPS modules, makes development iteration on the module itself easier
-    Remove-Module Idaptive.Samples.Powershell 4>$null
+    Remove-Module Idaptive-Powershell 4>$null
 }
