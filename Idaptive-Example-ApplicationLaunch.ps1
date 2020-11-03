@@ -1,3 +1,12 @@
+[CmdletBinding()]
+param(
+    #Used for interactive auth only. Comment out for OAuth
+    [Parameter(Mandatory=$true)]
+    [string]$username="",
+    [string]$endpoint = "https://pod0.idaptive.app"
+)
+
+
 # Import the Idaptive PowerShell Sample Module (see https://github.com/mdug-gfb/idaptive-powershell)
 Import-Module .\module\Idaptive-Powershell.psd1 3>$null 4>$null
 
@@ -6,7 +15,7 @@ Import-Module .\module\Idaptive-Powershell.psd1 3>$null 4>$null
 if($null -eq $token)
 {
     Write-Verbose "Creating New Token"
-    $token = Invoke-IdaptiveInteractiveLoginToken -Username "mduggan@goldfinchbio.com" -Endpoint "https://pod0.idaptive.app" -Verbose:$enableVerbose    
+    $token = Invoke-IdaptiveInteractiveLoginToken -Username $usename -Endpoint "https://pod0.idaptive.app" -Verbose:$enableVerbose    
 }
 else {
     Write-Verbose "Reusing Token"
