@@ -36,7 +36,7 @@ function SetColumns {
     $restArg.ID = $id #User UUID
     $restArg.Table = $table #Normally set to users
     
-    $restResult = Idaptive-InvokeREST -Method "/ExtData/SetColumns" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/ExtData/SetColumns" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

@@ -28,7 +28,7 @@ function SetUserState {
     $restArg.ID = $userUuid
     $restArg.state = $newState    
     
-    $restResult = Idaptive-InvokeREST -Method "/cdirectoryservice/setuserstate" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/cdirectoryservice/setuserstate" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

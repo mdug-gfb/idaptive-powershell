@@ -24,7 +24,7 @@ function HandleAppClick {
     
     $noArg = @{}
 
-    $appClickResult = Idaptive-InvokeREST -Method "/uprest/handleAppClick?appkey=$appKey" -Endpoint $endpoint -Token $bearerToken -ObjectContent $noArg -Verbose:$enableVerbose  
+    $appClickResult = Invoke-IdaptiveREST -Method "/uprest/handleAppClick?appkey=$appKey" -Endpoint $endpoint -Token $bearerToken -ObjectContent $noArg -Verbose:$enableVerbose  
     
     return $appClickResult
 }

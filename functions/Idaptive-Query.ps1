@@ -30,7 +30,7 @@ function Query {
     $restArg.Args.Limit = 10000
     $restArg.Args.Caching = -1
     
-    $queryResult = Idaptive-InvokeREST -Method "/redrock/query" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $queryResult = Invoke-IdaptiveREST -Method "/redrock/query" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($queryResult.success -ne $true)
     {
         throw "Server error: $($queryResult.Message)"

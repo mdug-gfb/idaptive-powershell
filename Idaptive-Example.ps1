@@ -25,8 +25,6 @@ $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Import the Idaptive.Samples.Powershell  and Idaptive-CPS modules 
 Import-Module $exampleRootDir\module\Idaptive-Powershell.psd1 3>$null 4>$null
-Import-Module $exampleRootDir\module\Idaptive-Powershell-CPS.psm1   3> $null 4>$null
-Import-Module $exampleRootDir\module\Idaptive-Powershell-CPS-Export.psm1   3> $null 4>$null
 
 # If Verbose is enabled, we'll pass it through
 $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
@@ -44,15 +42,12 @@ $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
 . $exampleRootDir\functions\Idaptive-GetNicepLinks.ps1
 . $exampleRootDir\functions\Idaptive-GetPolicyBlock.ps1
 . $exampleRootDir\functions\Idaptive-SavePolicyBlock3.ps1
-# Import sample function definitions for CPS
-. $exampleRootDir\functions\Idaptive-CPS.AddResource.ps1
-. $exampleRootDir\functions\Idaptive-CPS.AddAccount.ps1
-. $exampleRootDir\functions\Idaptive-CPS.UpdateMembersCollection.ps1
+
 
 try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
-    #  If you already have a bearer token and endpoint, no need to do this, just start using Idaptive-InvokeREST
+    #  If you already have a bearer token and endpoint, no need to do this, just start using Invoke-IdaptiveREST
     #$token = Invoke-InteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Auth Code Flow.
@@ -82,7 +77,7 @@ try
     #$token = Idaptive-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
             
     # Get information about the user who owns this token via /security/whoami     
-    $userInfo = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose     
+    $userInfo = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose     
     Write-Host "Current user: " $userInfo.Result.User
     
     # Run a query for top user logins from last 30 days
@@ -140,20 +135,7 @@ try
     #$getPolicyLinksResult = GetNicepLinks -Endpoint $token.Endpoint -BearerToken $token.BearerToken
     #$getPolicyBlockResult = GetPolicyBlock -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Name "/Policy/name"
     #$savePolicyBlock = SavePolicyBlock -Endpoint $token.Endpoint -BearerToken $token.BearerToken -PolicyJsonBlock $getPolicyBlockResult
-
-
-    # Create New CPS Resource
-    #AddResource -Endpoint $token.Endpoint -BearerToken $token.BearerToken -Name "ResourceName" -FQDN "Machine FQDN" -ComputerClass "Windows" -SessionType "Rdp" -Description "Some Description"     
-    
-    # Add User to a CPS Resource
-    #AddAccount -Endpoint $token.Endpoint -BearerToken $token.BearerToken -User "Username" -Password "Password" -Description "Some Description" -Host "ComputerID"    
-
-    # Update a CPS Set/Collection
-    #UpdateMembersCollection -Endpoint $token.Endpoint -BearerToken $token.BearerToken -id "setGUID" -key "AccountOrServerKey" -table "Server or VaultAccount"
-
-    # Import CPS entities (Systems, Domains, Databases, Accounts) listed in a CSV file
-    #Idaptive-CPS-Import -Endpoint  $token.Endpoint -Token  $token.BearerToken -CSVFile "C:\Sample\Sample.CSV" -Verbose:$enableVerbose
-    
+ 
     # Escrow feature (export Systems, Domains, Databases, Accounts and their attributes into a CSV file and email it to designated recipients)
 	# Replace the args with args for your instance (i.e., FilePath, Emails) 
 	#Set-EscrowKey -Endpoint $token.Endpoint -Token $token.BearerToken -FilePath 'C:\pubKey.asc' -Verbose:$enableVerbose 
@@ -165,12 +147,10 @@ try
 	#Get-EscrowScheduleStatus -Endpoint $token.Endpoint -Token $token.BearerToken -Verbose:$enableVerbose 
     
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
-    #$logoutResult = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose           
+    #$logoutResult = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose           
 }
 finally
 {
     # Always remove the Idaptive.Samples.Powershell and Idaptive-CPS modules, makes development iteration on the module itself easier
     Remove-Module Idaptive.Samples.Powershell 4>$null
-    Remove-Module Idaptive-CPS 4>$null
-    Remove-Module Idaptive-CPS.Export 4>$null
 }

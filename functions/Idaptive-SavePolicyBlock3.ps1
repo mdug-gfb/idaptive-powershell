@@ -26,7 +26,7 @@ function SavePolicyBlock {
     $restArg.Policy = $policyJsonBlock
 
     
-    $saveResult = Idaptive-InvokeREST -Method "/policy/savepolicyblock3" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $saveResult = Invoke-IdaptiveREST -Method "/policy/savepolicyblock3" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($saveResult.success -ne $true)
     {
         throw "Server error: $($saveResult.Message)"

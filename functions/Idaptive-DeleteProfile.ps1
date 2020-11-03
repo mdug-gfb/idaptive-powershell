@@ -25,7 +25,7 @@ function DeleteProfile {
     $restArg = @{}
     $restArg.uuid = $uuid
     
-    $deleteResult = Idaptive-InvokeREST -Method "/AuthProfile/DeleteProfile" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $deleteResult = Invoke-IdaptiveREST -Method "/AuthProfile/DeleteProfile" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($deleteResult.success -ne $true)
     {
         throw "Server error: $($deleteResult.Message)"

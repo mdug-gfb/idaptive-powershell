@@ -23,7 +23,7 @@ function IssueUserCert {
     $restArg = @{}
     $restArg.force = $false
     
-    $restResult = Idaptive-InvokeREST -Method "/core/issueusercert" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/core/issueusercert" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

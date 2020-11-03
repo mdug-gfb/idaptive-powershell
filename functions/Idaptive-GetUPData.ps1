@@ -23,7 +23,7 @@ function GetUPData {
     $restArg = @{}
     $restArg.force = $false
     
-    $restResult = Idaptive-InvokeREST -Method "/uprest/getupdata" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/uprest/getupdata" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

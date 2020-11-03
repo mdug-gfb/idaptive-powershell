@@ -27,7 +27,7 @@ function GetProfileList {
     $restArg.Args.Limit = 10000
     $restArg.Args.Caching = -1
     
-    $getResult = Idaptive-InvokeREST -Method "/AuthProfile/GetProfileList" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $getResult = Invoke-IdaptiveREST -Method "/AuthProfile/GetProfileList" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($getResult.success -ne $true)
     {
         throw "Server error: $($getResult.Message)"

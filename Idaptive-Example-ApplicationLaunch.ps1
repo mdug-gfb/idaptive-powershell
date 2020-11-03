@@ -2,7 +2,7 @@
 Import-Module .\module\Idaptive-Powershell.psd1 3>$null 4>$null
 
 # MFA login and get a bearer token as the MFA'd user
-#  If you already have a bearer token and endpoint just start using Idaptive-InvokeREST
+#  If you already have a bearer token and endpoint just start using Invoke-IdaptiveREST
 if($null -eq $token)
 {
     Write-Verbose "Creating New Token"

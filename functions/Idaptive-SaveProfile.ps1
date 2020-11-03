@@ -28,7 +28,7 @@ function SaveProfile {
 
 
     
-    $saveResult = Idaptive-InvokeREST -Method "/AuthProfile/SaveProfile" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $saveResult = Invoke-IdaptiveREST -Method "/AuthProfile/SaveProfile" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($saveResult.success -ne $true)
     {
         throw "Server error: $($saveResult.Message)"

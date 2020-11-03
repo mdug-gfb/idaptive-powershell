@@ -25,7 +25,7 @@ function GetPolicyBlock {
     $restArg = @{}
     $restArg.name = $name
     
-    $getResult = Idaptive-InvokeREST -Method "/policy/getpolicyblock" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $getResult = Invoke-IdaptiveREST -Method "/policy/getpolicyblock" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($getResult.success -ne $true)
     {
         throw "Server error: $($getResult.Message)"

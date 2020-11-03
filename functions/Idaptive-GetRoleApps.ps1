@@ -24,7 +24,7 @@ function GetRoleApps {
     
     $restArg = @{}    
     
-    $restResult = Idaptive-InvokeREST -Method "/saasmanage/getroleapps?role=$role" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/saasmanage/getroleapps?role=$role" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

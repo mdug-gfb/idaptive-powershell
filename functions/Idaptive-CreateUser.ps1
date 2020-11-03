@@ -32,7 +32,7 @@ function CreateUser {
     $restArg.Password = $password    
     $restArg.Description = $description
     
-    $restResult = Idaptive-InvokeREST -Method "/cdirectoryservice/createuser" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/cdirectoryservice/createuser" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

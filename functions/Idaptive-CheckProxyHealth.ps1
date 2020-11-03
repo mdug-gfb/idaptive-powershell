@@ -24,7 +24,7 @@ function CheckProxyHealth {
     
     $restArg = @{}    
     
-    $restResult = Idaptive-InvokeREST -Method "/Core/CheckProxyHealth?proxyUuid=$proxyUuid" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
+    $restResult = Invoke-IdaptiveREST -Method "/Core/CheckProxyHealth?proxyUuid=$proxyUuid" -Endpoint $endpoint -Token $bearerToken -ObjectContent $restArg -Verbose:$enableVerbose
     if($restResult.success -ne $true)
     {
         throw "Server error: $($restResult.Message)"

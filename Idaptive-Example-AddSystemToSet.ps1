@@ -23,23 +23,21 @@ param(
 $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 # Import the Idaptive.Samples.Powershell module
-Import-Module $exampleRootDir\module\Idaptive.Samples.Powershell.psm1 3>$null 4>$null
+Import-Module $exampleRootDir\module\Idaptive-Powershell.psd1 3>$null 4>$null
 
 # If Verbose is enabled, we'll pass it through
 $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
 
 # Import sample function definitions
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.IssueUserCert.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.Query.ps1
-# Import sample function definitions for CPS
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.UpdateMembersCollection.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.GetSetID.ps1
+. $exampleRootDir\functions\Idaptive-IssueUserCert.ps1
+. $exampleRootDir\functions\Idaptive-Query.ps1
+
 
 try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
-    #  If you already have a bearer token and endpoint, no need to do this, just start using Idaptive-InvokeREST
-    $token = Idaptive-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose
+    #  If you already have a bearer token and endpoint, no need to do this, just start using Invoke-IdaptiveREST
+    $token = Invoke-IdaptiveInteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose
 
     # Issue a certificate for the logged in user. This only needs to be called once.
     #$userCert = IssueUserCert -Endpoint $token.Endpoint -BearerToken $token.BearerToken
@@ -56,12 +54,12 @@ try
     #$token = Idaptive-CertSsoLogin-GetToken -Certificate $certificate -Endpoint $endpoint -Verbose:$enableVerbose
 
     # Get information about the user who owns this token via /security/whoami
-    $userInfo = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose
+    $userInfo = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/whoami" -Token $token.BearerToken -Verbose:$enableVerbose
     Write-Host "Current user: " $userInfo.Result.User
 
       #Enter the hostname of the system and the name of the set below
-      $computer = "HostName"
-      $systemset = "SetName"
+      $computer = "mduggan-mbp"
+      $systemset = "MacSet"
       #Note that the HostName is case-sensitive and both the HostName and SetName must exist in CPS prior to executing this script
 
       $systemkey = ""
@@ -89,10 +87,10 @@ try
       }
 
     # We're done, and don't want to use this token for anything else, so invalidate it by logging out
-    $logoutResult = Idaptive-InvokeREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose
+    $logoutResult = Invoke-IdaptiveREST -Endpoint $token.Endpoint -Method "/security/logout" -Token $token.BearerToken -Verbose:$enableVerbose
 }
 finally
 {
-    # Always remove the Idaptive.Samples.Powershell module, makes development iteration on the module itself easier
-    Remove-Module Idaptive.Samples.Powershell 4>$null
+    # Always remove the Idaptive-Powershell module, makes development iteration on the module itself easier
+    Remove-Module Idaptive-Powershell 4>$null
 }
