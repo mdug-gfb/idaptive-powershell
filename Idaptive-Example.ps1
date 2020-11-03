@@ -23,46 +23,46 @@ param(
 # Get the directory the example script lives in
 $exampleRootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
-# Import the Idaptive.Samples.Powershell  and Idaptive.Samples.PowerShell.CPS modules 
-Import-Module $exampleRootDir\module\Idaptive.Samples.Powershell.psm1 3>$null 4>$null
-Import-Module $exampleRootDir\module\Idaptive.Samples.PowerShell.CPS.psm1   3> $null 4>$null
-Import-Module $exampleRootDir\module\Idaptive.Samples.PowerShell.CPS.Export.psm1   3> $null 4>$null
+# Import the Idaptive.Samples.Powershell  and Idaptive-CPS modules 
+Import-Module $exampleRootDir\module\Idaptive-Powershell.psd1 3>$null 4>$null
+Import-Module $exampleRootDir\module\Idaptive-Powershell-CPS.psm1   3> $null 4>$null
+Import-Module $exampleRootDir\module\Idaptive-Powershell-CPS-Export.psm1   3> $null 4>$null
 
 # If Verbose is enabled, we'll pass it through
 $enableVerbose = ($PSBoundParameters['Verbose'] -eq $true)
 
 # Import sample function definitions
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.IssueUserCert.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.Query.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetUPData.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetRoleApps.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CreateUser.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.SetUserState.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.UpdateApplicationDE.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.HandleAppClick.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CheckProxyHealth.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetNicepLinks.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.GetPolicyBlock.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.SavePolicyBlock3.ps1
+. $exampleRootDir\functions\Idaptive-IssueUserCert.ps1
+. $exampleRootDir\functions\Idaptive-Query.ps1
+. $exampleRootDir\functions\Idaptive-GetUPData.ps1
+. $exampleRootDir\functions\Idaptive-GetRoleApps.ps1
+. $exampleRootDir\functions\Idaptive-CreateUser.ps1
+. $exampleRootDir\functions\Idaptive-SetUserState.ps1
+. $exampleRootDir\functions\Idaptive-UpdateApplicationDE.ps1
+. $exampleRootDir\functions\Idaptive-HandleAppClick.ps1
+. $exampleRootDir\functions\Idaptive-CheckProxyHealth.ps1
+. $exampleRootDir\functions\Idaptive-GetNicepLinks.ps1
+. $exampleRootDir\functions\Idaptive-GetPolicyBlock.ps1
+. $exampleRootDir\functions\Idaptive-SavePolicyBlock3.ps1
 # Import sample function definitions for CPS
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.AddResource.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.AddAccount.ps1
-. $exampleRootDir\functions\Idaptive.Samples.PowerShell.CPS.UpdateMembersCollection.ps1
+. $exampleRootDir\functions\Idaptive-CPS.AddResource.ps1
+. $exampleRootDir\functions\Idaptive-CPS.AddAccount.ps1
+. $exampleRootDir\functions\Idaptive-CPS.UpdateMembersCollection.ps1
 
 try
 {
     # MFA login and get a bearer token as the provided user, uses interactive Read-Host/Write-Host to perform MFA
     #  If you already have a bearer token and endpoint, no need to do this, just start using Idaptive-InvokeREST
-    #$token = Idaptive-InteractiveLogin-GetToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
+    #$token = Invoke-InteractiveLoginToken -Username $username -Endpoint $endpoint -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Auth Code Flow.
-    #$token = Idaptive-OAuthCodeFlow -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    #$token = Invoke-IdaptiveOAuthCodeFlow -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Implicit Flow. 
-    #$token = Idaptive-OAuthImplicit -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    #$token = Invoke-IdaptiveOAuthImplicit -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Cleint Credentials Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.app/reference#post_security-ondemandchallenge
-    $token = Idaptive-OAuth-ClientCredentials -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
+    $token = Invoke-IdaptiveOAuthClientCredentials  -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Scope "scope" -Verbose:$enableVerbose    
 
     #Authorization using OAuth2 Resopurce Owner Flow. If interactive or MFA is desired, use OnDemandChallenge APIs https://developer.idaptive.app/reference#post_security-ondemandchallenge
     #$token = Idaptive-OAuthResourceOwner -Endpoint $endpoint -Appid "applicationId" -Clientid "client@domain" -Clientsecret "clientSec" -Username "user@domain" -Password "password" -Scope "scope" -Verbose:$enableVerbose
@@ -169,8 +169,8 @@ try
 }
 finally
 {
-    # Always remove the Idaptive.Samples.Powershell and Idaptive.Samples.Powershell.CPS modules, makes development iteration on the module itself easier
+    # Always remove the Idaptive.Samples.Powershell and Idaptive-CPS modules, makes development iteration on the module itself easier
     Remove-Module Idaptive.Samples.Powershell 4>$null
-    Remove-Module Idaptive.Samples.Powershell.CPS 4>$null
-    Remove-Module Idaptive.Samples.PowerShell.CPS.Export 4>$null
+    Remove-Module Idaptive-CPS 4>$null
+    Remove-Module Idaptive-CPS.Export 4>$null
 }

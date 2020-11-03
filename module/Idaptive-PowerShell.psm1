@@ -794,5 +794,5 @@ Export-ModuleMember -function Invoke-IdaptiveInteractiveLoginToken
 Export-ModuleMember -function Invoke-IdaptiveCertSsoLoginToken
 Export-ModuleMember -function Invoke-IdaptiveOAuthCodeFlow
 Export-ModuleMember -function Invoke-IdaptiveOAuthImplicit
-Export-ModuleMember -function Invoke-IdaptiveOAuth-ClientCredentials
+Export-ModuleMember -function Invoke-IdaptiveOAuthClientCredentials
 Export-ModuleMember -function Invoke-IdaptiveOAuthResourceOwner

@@ -1,7 +1,7 @@
 # Idaptive-Powershell
 
 Notes: This package contains code samples for the Idaptive Identity Service Platform API's written in PowerShell. Please use PowerShell version 4 or above. 
-This repository was forked from the Centrify Powershell repository.
+This repository was forked from the Centrify Powershell repository, renaming modules and functions with Idaptive name and removing Centrify specific CPS functions
 Not all functions have been fully tested
 
 The sample is broken into 3 parts:
